@@ -7,12 +7,12 @@ const result_failure = "Failure";
 
 const kullamPeopleSchema = Joi.object({
   id: Joi.number().integer().optional(),
-  name: Joi.string().required(),
-  kullam: Joi.string().allow('', null).optional(),
-  temple: Joi.string().allow('', null).optional(),
-  phone: Joi.string().allow('', null).optional(),
-  address: Joi.string().allow('', null).optional(),
-  status: Joi.string().allow('', null).optional()
+  status: Joi.string().allow('', null).optional(),
+  vagaiyara: Joi.string().allow('', null).optional(),
+  entha_uru: Joi.string().allow('', null).optional(),
+  district: Joi.string().allow('', null).optional(),
+  pincode: Joi.string().allow('', null).optional(),
+  vagaiyara_nickname: Joi.string().allow('', null).optional()
 });
 
 const deleteSchema = Joi.object({
@@ -35,18 +35,18 @@ const KullamPeopleController = (function () {
         try {
           const insertQuery = `
           INSERT INTO kullam_people
-          (name, kullam, temple, phone, address, status)
+          (status, vagaiyara, entha_uru, district, pincode, vagaiyara_nickname)
           VALUES
           (?,?,?,?,?,?)
         `;
 
           const [result] = await client.query(insertQuery, [
-            value.name,
-            value.kullam || null,
-            value.temple || null,
-            value.phone || null,
-            value.address || null,
             value.status || 'active',
+            value.vagaiyara || null,
+            value.entha_uru || null,
+            value.district || null,
+            value.pincode || null,
+            value.vagaiyara_nickname || null
           ]);
 
           callback(null, {
@@ -73,7 +73,7 @@ const KullamPeopleController = (function () {
 
         try {
           const query = `
-            SELECT id, name, kullam, temple, phone, address, status, created_date, updated_date
+            SELECT id, status, vagaiyara, entha_uru, district, pincode, vagaiyara_nickname, created_date, updated_date
             FROM kullam_people
             ORDER BY id DESC;
           `;
@@ -97,7 +97,7 @@ const KullamPeopleController = (function () {
 
         try {
           const query = `
-            SELECT id, name, kullam, temple, phone, address, status, created_date, updated_date
+            SELECT id, status, vagaiyara, entha_uru, district, pincode, vagaiyara_nickname, created_date, updated_date
             FROM kullam_people
             WHERE id = ?
           `;
@@ -131,17 +131,17 @@ const KullamPeopleController = (function () {
 
           const updateQuery = `
             UPDATE kullam_people
-            SET name = ?, kullam = ?, temple = ?, phone = ?, address = ?, status = ?
+            SET status = ?, vagaiyara = ?, entha_uru = ?, district = ?, pincode = ?, vagaiyara_nickname = ?
             WHERE id = ?
           `;
 
           await client.query(updateQuery, [
-            value.name,
-            value.kullam || null,
-            value.temple || null,
-            value.phone || null,
-            value.address || null,
             value.status || null,
+            value.vagaiyara || null,
+            value.entha_uru || null,
+            value.district || null,
+            value.pincode || null,
+            value.vagaiyara_nickname || null,
             value.id,
           ]);
 

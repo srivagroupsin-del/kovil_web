@@ -21,7 +21,8 @@ import {
   Building2,
   PhoneCall,
   XCircle,
-  Hash
+  Hash,
+  Tag
 } from 'lucide-react';
 import { showSuccess, showError, showWarning, showConfirm } from '../utils/swal';
 
@@ -47,7 +48,7 @@ const FormInput = ({ label, name, value, onChange, icon: Icon, placeholder, type
   </div>
 );
 
-const FormSelect = ({ label, name, value, onChange, icon: Icon, options, required = false }) => (
+const FormSelect = ({ label, name, value, onChange, icon: Icon, options, required = false, placeholder = "" }) => (
   <div className="form-group">
     <label className="form-label">{label}</label>
     <div className="input-wrapper">
@@ -61,8 +62,12 @@ const FormSelect = ({ label, name, value, onChange, icon: Icon, options, require
         required={required}
         style={{ paddingLeft: Icon ? '38px' : '12px', height: '38px', fontSize: '13.5px', appearance: 'auto' }}
       >
-        <option value="0">Select {label}</option>
-        {options.map((opt, i) => <option key={i} value={opt}>{opt}</option>)}
+        <option value="0">{placeholder || `Select ${label}`}</option>
+        {options.map((opt, i) => {
+          const val = typeof opt === 'object' ? opt.value : opt;
+          const labelText = typeof opt === 'object' ? opt.label : opt;
+          return <option key={i} value={val}>{labelText}</option>;
+        })}
       </select>
     </div>
   </div>
@@ -72,20 +77,46 @@ const KullamPeople = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [showForm, setShowForm] = useState(false);
   const [formData, setFormData] = useState({
-    name: '',
-    kullam: '0',
-    temple: '0',
-    phone: '',
-    address: ''
+    vagaiyara: '0',
+    entha_uru: '',
+    district: '',
+    pincode: '',
+    vagaiyara_nickname: ''
   });
 
   const [data, setData] = useState([]);
+  const [vagaiyaras, setVagaiyaras] = useState([]);
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState(null);
 
   useEffect(() => {
     fetchData();
+    fetchVagaiyaras();
   }, []);
+
+  useEffect(() => {
+    const fetchPincodeDetails = async () => {
+      if (formData.pincode && formData.pincode.length === 6) {
+        try {
+          const response = await fetch(`https://localcity.jobes24x7.com/api/pincode/details/${formData.pincode}`);
+          const res = await response.json();
+          
+          if (res.data?.result === 'Success' && res.data?.data?.length > 0) {
+            const details = res.data.data[0];
+            setFormData(prev => ({
+              ...prev,
+              entha_uru: details.city_name || details.taluk_name || prev.entha_uru,
+              district: details.district_name || prev.district
+            }));
+          }
+        } catch (error) {
+          console.error('Error fetching pincode details:', error);
+        }
+      }
+    };
+
+    fetchPincodeDetails();
+  }, [formData.pincode]);
 
   const fetchData = async () => {
     try {
@@ -102,16 +133,40 @@ const KullamPeople = () => {
     }
   };
 
-  const kullamOptions = [
-    "அந்துவன்குலம்", "அழகக்குறளம்", "ஆதிக்குலம்", "ஆந்தைக்குலம்", "ஆடர்க்குலம்", "ஆவன்குலம்", 
-    "ஈஞ்சன்குலம்", "ஒழுக்கர்குலம்", "ஓதாளர்க்குலம்", "கணக்கன்குலம்", "கண்ணங்குலம்", 
-    "கண்ணாந்தைக்குலம்", "காடைக்குலம்", "காரிக்குலம்", "கீரன்க்குலம்", "குழையன்குலம்", 
-    "கூறைக்குலம்", "கோவேந்தர்குலம்"
-  ];
+  const fetchVagaiyaras = async () => {
+    try {
+      const res = await fetch(BASE_API + '/vagaiyaras');
+      if (res.ok) {
+        const json = await res.json();
+        const apiData = json.data?.data || [];
+        if (apiData.length > 0) {
+          setVagaiyaras(apiData.map(v => ({
+            value: v.vagaiyara_name_tamil || v.vagaiyara_name_english,
+            label: v.vagaiyara_name_tamil ? `${v.vagaiyara_name_tamil} (${v.vagaiyara_name_english || ''})` : v.vagaiyara_name_english
+          })));
+          return;
+        }
+      }
+    } catch (err) {
+      console.error(err);
+    }
 
-  const templeOptions = [
-    "கோவில் 1", "கோவில் 2", "கோவில் 3", "கோவில் 4", "கோவில் 5", "கோவில் 6", "கோவில் 7"
-  ];
+    // Fallback to local storage or mock list
+    const saved = localStorage.getItem('local_vagaiyaras');
+    const localData = saved ? JSON.parse(saved) : [];
+    if (localData.length > 0) {
+      setVagaiyaras(localData.map(v => ({
+        value: v.name_ta || v.name_en,
+        label: v.name_ta ? `${v.name_ta} (${v.name_en || ''})` : v.name_en
+      })));
+    } else {
+      setVagaiyaras([
+        { value: 'முத்தையா வகைரா', label: 'முத்தையா வகைரா (Muthaiya Vagaiyara)' },
+        { value: 'சின்னசாமி வகைரா', label: 'சின்னசாமி வகைரா (Chinnasamy Vagaiyara)' },
+        { value: 'அண்ணாமலை வகைரா', label: 'அண்ணாமலை வகைரா (Annamalai Vagaiyara)' }
+      ]);
+    }
+  };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -120,11 +175,11 @@ const KullamPeople = () => {
 
   const clearForm = () => {
     setFormData({
-      name: '',
-      kullam: '0',
-      temple: '0',
-      phone: '',
-      address: ''
+      vagaiyara: '0',
+      entha_uru: '',
+      district: '',
+      pincode: '',
+      vagaiyara_nickname: ''
     });
     setEditingId(null);
     setShowForm(false);
@@ -132,8 +187,8 @@ const KullamPeople = () => {
 
   const handleSave = async (e) => {
     if (e) e.preventDefault();
-    if (!formData.name) {
-      showWarning("பெயர் தேவை", "Name is required");
+    if (formData.vagaiyara === '0') {
+      showWarning("வகைரா தேவை", "Vagaiyara is required");
       return;
     }
 
@@ -142,11 +197,11 @@ const KullamPeople = () => {
       const url = isEditMode ? `${API_BASE_URL}/update/${editingId}` : `${API_BASE_URL}/create`;
       
       const submitData = {
-        name: formData.name,
-        kullam: formData.kullam === '0' ? '' : formData.kullam,
-        temple: formData.temple === '0' ? '' : formData.temple,
-        phone: formData.phone,
-        address: formData.address,
+        vagaiyara: formData.vagaiyara === '0' ? '' : formData.vagaiyara,
+        entha_uru: formData.entha_uru,
+        district: formData.district,
+        pincode: formData.pincode,
+        vagaiyara_nickname: formData.vagaiyara_nickname,
         status: 'active'
       };
 
@@ -171,11 +226,11 @@ const KullamPeople = () => {
   const handleEdit = (item) => {
     setEditingId(item.id);
     setFormData({
-      name: item.name || '',
-      kullam: item.kullam || '0',
-      temple: item.temple || '0',
-      phone: item.phone || '',
-      address: item.address || ''
+      vagaiyara: item.vagaiyara || '0',
+      entha_uru: item.entha_uru || '',
+      district: item.district || '',
+      pincode: item.pincode || '',
+      vagaiyara_nickname: item.vagaiyara_nickname || ''
     });
     setShowForm(true);
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -197,9 +252,10 @@ const KullamPeople = () => {
   };
 
   const filteredData = data.filter(item => 
-    (item.name || '').toLowerCase().includes(searchQuery.toLowerCase()) || 
-    (item.kullam || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
-    (item.temple || '').toLowerCase().includes(searchQuery.toLowerCase())
+    (item.vagaiyara || '').toLowerCase().includes(searchQuery.toLowerCase()) || 
+    (item.entha_uru || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (item.district || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (item.vagaiyara_nickname || '').toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   return (
@@ -207,7 +263,7 @@ const KullamPeople = () => {
       <div className="form-header">
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '4px' }}>
           <Users size={24} color="#6366f1" />
-          <h2 style={{ margin: 0, fontSize: '20px' }}>குலம் மக்கள் (Community Members)</h2>
+          <h2 style={{ margin: 0, fontSize: '20px' }}>பரம்பரையாக ஒரே ஊர் வசிப்பவர்கள்</h2>
         </div>
         <p style={{ fontSize: '13px' }}>கோவிலின் குல மக்கள் மற்றும் உறுப்பினர்களின் விவரங்களை இங்கே நிர்வகிக்கலாம்.</p>
       </div>
@@ -217,24 +273,24 @@ const KullamPeople = () => {
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <PlusCircle size={18} color="#6366f1" />
             <h3 style={{ margin: 0, fontSize: '16px', fontWeight: '700' }}>
-              {editingId ? 'உறுப்பினர் விவரத்தை மாற்ற (Edit)' : 'புதிய உறுப்பினர் (Add New)'}
+              {editingId ? 'குடும்ப விவரத்தை மாற்ற (Edit Family)' : 'புதிய குடும்பத்தை சேர்க்க (Add New Family)'}
             </h3>
           </div>
           <button onClick={() => setShowForm(!showForm)} className="btn btn-primary" style={{ height: '36px', padding: '0 16px', fontSize: '13px' }}>
-            {showForm ? <><XCircle size={14} /> Cancel</> : <><Plus size={14} /> Add Member</>}
+            {showForm ? <><XCircle size={14} /> Cancel</> : <><Plus size={14} /> Add Family</>}
           </button>
         </div>
 
         {showForm && (
           <div className="form-grid animate-fade-in" style={{ gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', background: '#f8fafc', padding: '20px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
-            <FormInput label="பெயர் (Name) *" name="name" value={formData.name} onChange={handleInputChange} icon={User} placeholder="Name..." required />
-            <FormSelect label="குளம் (Kullam)" name="kullam" value={formData.kullam} onChange={handleInputChange} icon={LayoutGrid} options={kullamOptions} />
-            <FormSelect label="கோவில் (Temple)" name="temple" value={formData.temple} onChange={handleInputChange} icon={Home} options={templeOptions} />
-            <FormInput label="தொலைபேசி (Phone)" name="phone" value={formData.phone} onChange={handleInputChange} icon={PhoneCall} placeholder="Phone No..." />
-            <div style={{ gridColumn: 'span 2' }}>
-              <FormInput label="முகவரி / பதவி" name="address" value={formData.address} onChange={handleInputChange} icon={MapPin} placeholder="Address or Position..." />
-            </div>
+            <FormInput label="ஊர் (City)" name="entha_uru" value={formData.entha_uru} onChange={handleInputChange} icon={Home} placeholder="City/Town/Village..." />
+            <FormSelect label="வகைரா (Select Vagaira) *" name="vagaiyara" value={formData.vagaiyara} onChange={handleInputChange} icon={Building2} options={vagaiyaras} placeholder="-- வகைரா தேர்ந்தெடுக்கவும் --" required />
+            <FormInput label="குடும்பத்தின் பட்டப்பெயர் (Family Nickname)" name="vagaiyara_nickname" value={formData.vagaiyara_nickname} onChange={handleInputChange} icon={Tag} placeholder="Nickname..." />
             
+            
+            <FormInput label="மாவட்டம் (District)" name="district" value={formData.district} onChange={handleInputChange} icon={MapPin} placeholder="District..." />
+            <FormInput label="அஞ்சல் குறியீடு (Pincode)" name="pincode" value={formData.pincode} onChange={handleInputChange} icon={Hash} placeholder="Pincode..." />
+
             <div style={{ gridColumn: 'span 3', display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '10px' }}>
               <button type="button" onClick={clearForm} className="btn btn-outline" style={{ height: '38px' }}>
                 <Eraser size={16}/> Clear
@@ -269,18 +325,16 @@ const KullamPeople = () => {
             <thead>
               <tr>
                 <th style={{ width: '50px' }}>#</th>
-                <th>பெயர் & முகவரி</th>
-                <th>கோவில்</th>
-                <th>குளம்</th>
-                <th>தொலைபேசி</th>
+                <th>வகைரா & குடும்பத்தின் பட்டப்பெயர்</th>
+                <th>முகவரி விவரங்கள்</th>
                 <th style={{ textAlign: 'center' }}>Actions</th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
-                <tr><td colSpan="6" style={{ textAlign: 'center', padding: '40px' }}>Loading...</td></tr>
+                <tr><td colSpan="4" style={{ textAlign: 'center', padding: '40px' }}>Loading...</td></tr>
               ) : filteredData.length === 0 ? (
-                <tr><td colSpan="6" style={{ textAlign: 'center', padding: '40px' }}>பதிவுகள் இல்லை</td></tr>
+                <tr><td colSpan="4" style={{ textAlign: 'center', padding: '40px' }}>பதிவுகள் இல்லை</td></tr>
               ) : (
                 filteredData.map((item, idx) => (
                   <tr key={item.id}>
@@ -288,26 +342,26 @@ const KullamPeople = () => {
                     <td>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                         <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: '#eef2ff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                          <User size={16} color="#6366f1" />
+                          <Building2 size={16} color="#6366f1" />
                         </div>
                         <div>
-                          <div style={{ fontWeight: '600', fontSize: '13.5px' }}>{item.name}</div>
-                          <div style={{ fontSize: '11px', color: '#64748b', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                            <MapPin size={10} /> {item.address || 'No address'}
-                          </div>
+                          <div style={{ fontWeight: '600', fontSize: '13.5px' }}>{item.vagaiyara}</div>
+                          {item.vagaiyara_nickname && (
+                            <div style={{ fontSize: '11px', color: '#6366f1', display: 'flex', alignItems: 'center', gap: '4px', marginTop: '2px' }}>
+                              <Tag size={10} /> {item.vagaiyara_nickname}
+                            </div>
+                          )}
                         </div>
                       </div>
                     </td>
                     <td>
-                      <div style={{ fontSize: '13px', color: '#64748b' }}>{item.temple || '--'}</div>
-                    </td>
-                    <td>
-                      <span className="badge-status" style={{ background: '#f0fdf4', color: '#166534', border: '1px solid #bbf7d0', fontSize: '11px' }}>
-                        {item.kullam || '--'}
-                      </span>
-                    </td>
-                    <td>
-                      <div style={{ fontSize: '13px', fontWeight: '600', color: '#6366f1' }}>{item.phone || '--'}</div>
+                      <div style={{ fontSize: '12px', color: '#64748b', display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                        {item.entha_uru && <span><strong>ஊர்:</strong> {item.entha_uru}</span>}
+                        {(item.district || item.pincode) && (
+                          <span><strong>மாவட்டம்:</strong> {item.district}{item.pincode ? ` - ${item.pincode}` : ''}</span>
+                        )}
+                        {!item.entha_uru && !item.district && !item.pincode && <span>--</span>}
+                      </div>
                     </td>
                     <td>
                       <div style={{ display: 'flex', gap: '6px', justifyContent: 'center' }}>

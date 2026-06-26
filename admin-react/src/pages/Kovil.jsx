@@ -1,6 +1,6 @@
 import { BASE_API } from '../api/api_list';
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import {
   Church,
   User,
@@ -19,7 +19,8 @@ import {
   Info,
   X,
   Plus,
-  Camera
+  Camera,
+  Users
 } from 'lucide-react';
 import Swal, { showSuccess, showError } from '../utils/swal';
 
@@ -80,6 +81,59 @@ const FormSelect = ({ label, name, value, onChange, icon: Icon, options }) => (
     </div>
   </div>
 );
+
+const FormSelectObj = ({ label, name, value, onChange, icon: Icon, options, placeholder, disabled = false }) => (
+  <div className="form-group">
+    <label className="form-label">{label}</label>
+    <div className="input-wrapper">
+      {Icon && <Icon className="input-icon" size={18} />}
+      <select
+        name={name}
+        id={name}
+        className="form-control"
+        value={value}
+        onChange={onChange}
+        disabled={disabled}
+        style={{ paddingLeft: '42px', appearance: 'auto', background: disabled ? '#f8fafc' : '#fff' }}
+      >
+        <option value="">{placeholder}</option>
+        {options.map(opt => <option key={opt.id} value={opt.id}>{opt.name_ta} ({opt.name_en})</option>)}
+      </select>
+    </div>
+  </div>
+);
+
+const GENERATIONS = [
+  { value: '1', label: '1-ஆம் தலைமுறை (1st Generation)' },
+  { value: '2', label: '2-ஆம் தலைமுறை (2nd Generation)' },
+  { value: '3', label: '3-ஆம் தலைமுறை (3rd Generation)' },
+  { value: '4', label: '4-ஆம் தலைமுறை (4th Generation)' },
+  { value: '5', label: '5-ஆம் தலைமுறை (5th Generation)' },
+  { value: '6', label: '6-ஆம் தலைமுறை (6th Generation)' },
+  { value: '7', label: '7-ஆம் தலைமுறை (7th Generation)' },
+  { value: '8', label: '8-ஆம் தலைமுறை (8th Generation)' },
+  { value: '9', label: '9-ஆம் தலைமுறை (9th Generation)' },
+  { value: '10', label: '10-ஆம் தலைமுறை + (10th Generation+)' }
+];
+
+const getKulaDeivamImageUrl = (kd) => {
+  if (!kd) return BASE_API + '/files/default_god.svg';
+  if (kd.image) {
+    return `${BASE_API}/files/${kd.image}`;
+  }
+  const name = (kd.name_en || '').toLowerCase();
+  const nameTa = kd.name_ta || '';
+
+  if (name.includes('vinayagar') || nameTa.includes('விநாயகர்')) return BASE_API + '/files/default_vinayagar.svg';
+  if (name.includes('murugan') || nameTa.includes('முருகன்')) return BASE_API + '/files/default_murugan.svg';
+  if (name.includes('mariamman') || name.includes('amman') || name.includes('parameswari') || name.includes('kali') || name.includes('muthar') || nameTa.includes('அம்மன்') || nameTa.includes('பரமேஸ்வரி') || nameTa.includes('மாரி') || nameTa.includes('காளி') || nameTa.includes('முள்ளார்')) return BASE_API + '/files/default_amman.svg';
+  if (name.includes('durga') || nameTa.includes('துர்க்கை')) return BASE_API + '/files/default_durga.svg';
+  if (name.includes('karuppasamy') || name.includes('karuppan') || nameTa.includes('கருப்பசாமி') || nameTa.includes('கருப்பண்ணசுவாமி')) return BASE_API + '/files/default_karuppasamy.svg';
+  if (name.includes('shivan') || name.includes('siva') || nameTa.includes('சிவன்')) return BASE_API + '/files/default_shivan.svg';
+  if (name.includes('perumal') || name.includes('vishnu') || nameTa.includes('பெருமாள்')) return BASE_API + '/files/default_perumal.svg';
+
+  return BASE_API + '/files/default_god.svg';
+};
 
 const DynamicInputList = ({ label, name, values, onChange, icon: Icon, placeholder }) => {
   const handleAdd = () => {
@@ -462,6 +516,14 @@ const Kovil = () => {
   const [existingDetailId, setExistingDetailId] = useState(null);
 
   const [loading, setLoading] = useState(false);
+  const [activeStep, setActiveStep] = useState(1);
+
+  const [communities, setCommunities] = useState([]);
+  const [subCommunities, setSubCommunities] = useState([]);
+  const [kulams, setKulams] = useState([]);
+  const [kulaDeivams, setKulaDeivams] = useState([]);
+  const [vagaiyaras, setVagaiyaras] = useState([]);
+  const [wifeKulaDeivam, setWifeKulaDeivam] = useState('');
 
   const [formData, setFormData] = useState({
     otherNames: [''],
@@ -479,8 +541,104 @@ const Kovil = () => {
     padalPadiyavar: '',
     enthaPathi: '',
     mandapams: [''],
-    theivankal: [{ deivam: '', thesai: '', photo: '', file: null, previewUrl: '' }]
+    theivankal: [{ deivam: '', thesai: '', photo: '', file: null, previewUrl: '' }],
+    community_id: '',
+    sub_community_id: '',
+    kula_id: '',
+    kula_deivam_id: '',
+    vagaiyara_id: '',
+    tharpothaiya_vagaiyara: '',
+    generation_no: '',
+    marital_status: 'unmarried',
+    spouse_name: '',
+    spouse_kula_deivam_id: ''
   });
+
+  useEffect(() => {
+    const fetchOptions = async () => {
+      try {
+        const resC = await fetch(BASE_API + '/communities');
+        const dataC = await resC.json();
+        if (resC.ok && dataC.data && dataC.data.code === 200) {
+          setCommunities(dataC.data.data.map(c => ({
+            id: String(c.id),
+            name_ta: c.community_name_tamil || '',
+            name_en: c.community_name_english || ''
+          })));
+        }
+      } catch (e) { console.error(e); }
+
+      try {
+        const resSC = await fetch(BASE_API + '/sub-communities');
+        const dataSC = await resSC.json();
+        if (resSC.ok && dataSC.data && dataSC.data.code === 200) {
+          setSubCommunities(dataSC.data.data.map(s => ({
+            id: String(s.id),
+            community_id: String(s.community_id),
+            name_ta: s.sub_community_name_tamil || '',
+            name_en: s.sub_community_name_english || ''
+          })));
+        }
+      } catch (e) { console.error(e); }
+
+      try {
+        const resK = await fetch(BASE_API + '/kulas');
+        const dataK = await resK.json();
+        if (resK.ok && dataK.data && dataK.data.code === 200) {
+          setKulams(dataK.data.data.map(k => ({
+            id: String(k.id),
+            community_id: String(k.community_id),
+            name_ta: k.kula_name_tamil || '',
+            name_en: k.kula_name_english || ''
+          })));
+        }
+      } catch (e) { console.error(e); }
+
+      try {
+        const resKD = await fetch(BASE_API + '/kula-deivams');
+        const dataKD = await resKD.json();
+        if (resKD.ok && dataKD.data && dataKD.data.code === 200) {
+          setKulaDeivams(dataKD.data.data.map(kd => ({
+            id: String(kd.id),
+            community_id: String(kd.community_id),
+            sub_community_id: String(kd.sub_community_id),
+            kula_id: String(kd.kula_id),
+            name_ta: kd.deity_name_tamil || '',
+            name_en: kd.deity_name_english || '',
+            image: kd.image_path || ''
+          })));
+        }
+      } catch (e) { console.error(e); }
+
+      try {
+        const resV = await fetch(BASE_API + '/vagaiyaras');
+        const dataV = await resV.json();
+        if (resV.ok && dataV.data && dataV.data.code === 200) {
+          setVagaiyaras(dataV.data.data.map(v => ({
+            id: String(v.id),
+            community_id: String(v.community_id),
+            sub_community_id: String(v.sub_community_id),
+            kula_id: String(v.kula_id),
+            name_ta: v.vagaiyara_name_tamil || '',
+            name_en: v.vagaiyara_name_english || '',
+            sontha_uru: v.native_place || '',
+            epo_uru: v.current_place || ''
+          })));
+        }
+      } catch (e) { console.error(e); }
+    };
+
+    fetchOptions();
+  }, []);
+
+  useEffect(() => {
+    if (formData.spouse_kula_deivam_id && kulaDeivams.length > 0) {
+      const found = kulaDeivams.find(kd => String(kd.id) === String(formData.spouse_kula_deivam_id));
+      if (found) {
+        setWifeKulaDeivam(`${found.name_ta} (${found.name_en})`);
+      }
+    }
+  }, [formData.spouse_kula_deivam_id, kulaDeivams]);
 
   useEffect(() => {
     const loadTempleData = async () => {
@@ -534,7 +692,17 @@ const Kovil = () => {
               mandapams: detail.mandapams ? detail.mandapams.split(',').map(s => s.trim()) : [''],
               theivankal: detail.theivankal && detail.theivankal.length > 0
                 ? detail.theivankal.map(t => ({ deivam: t.deivam, thesai: t.thesai, photo: t.photo || '', file: null, previewUrl: '' }))
-                : [{ deivam: '', thesai: '', photo: '', file: null, previewUrl: '' }]
+                : [{ deivam: '', thesai: '', photo: '', file: null, previewUrl: '' }],
+              community_id: detail.community_id !== null ? String(detail.community_id) : '',
+              sub_community_id: detail.sub_community_id !== null ? String(detail.sub_community_id) : '',
+              kula_id: detail.kula_id !== null ? String(detail.kula_id) : '',
+              kula_deivam_id: detail.kula_deivam_id !== null ? String(detail.kula_deivam_id) : '',
+              vagaiyara_id: detail.vagaiyara_id !== null ? String(detail.vagaiyara_id) : '',
+              tharpothaiya_vagaiyara: detail.tharpothaiya_vagaiyara || '',
+              generation_no: detail.generation_no !== null ? String(detail.generation_no) : '',
+              marital_status: detail.marital_status || 'unmarried',
+              spouse_name: detail.spouse_name || '',
+              spouse_kula_deivam_id: detail.spouse_kula_deivam_id !== null ? String(detail.spouse_kula_deivam_id) : ''
             });
           }
         }
@@ -610,6 +778,17 @@ const Kovil = () => {
     formDataObj.append('mandapams', Array.isArray(formData.mandapams) ? formData.mandapams.filter(s => s.trim() !== '').join(', ') : formData.mandapams);
     formDataObj.append('theivankal', JSON.stringify(validDeities));
 
+    formDataObj.append('community_id', formData.community_id || '');
+    formDataObj.append('sub_community_id', formData.sub_community_id || '');
+    formDataObj.append('kula_id', formData.kula_id || '');
+    formDataObj.append('kula_deivam_id', formData.kula_deivam_id || '');
+    formDataObj.append('vagaiyara_id', formData.vagaiyara_id || '');
+    formDataObj.append('tharpothaiya_vagaiyara', formData.tharpothaiya_vagaiyara || '');
+    formDataObj.append('generation_no', formData.generation_no || '');
+    formDataObj.append('marital_status', formData.marital_status || 'unmarried');
+    formDataObj.append('spouse_name', formData.marital_status === 'married' ? formData.spouse_name : '');
+    formDataObj.append('spouse_kula_deivam_id', formData.marital_status === 'married' ? formData.spouse_kula_deivam_id : '');
+
     (formData.theivankal || []).forEach((t, idx) => {
       if (t.deivam && t.thesai && t.file) {
         formDataObj.append(`theivankal_photo_${idx}`, t.file);
@@ -645,6 +824,35 @@ const Kovil = () => {
     }
   };
 
+  const availableSubCommunities = subCommunities.filter(
+    sub => String(sub.community_id) === String(formData.community_id)
+  );
+
+  const availableKulams = kulams.filter(
+    k => String(k.community_id) === String(formData.community_id)
+  );
+
+  const availableKulaDeivams = kulaDeivams.filter(kd => {
+    const matchComm = String(kd.community_id) === String(formData.community_id);
+    const matchSub = !formData.sub_community_id || String(kd.sub_community_id) === String(formData.sub_community_id);
+    const matchKula = !formData.kula_id || String(kd.kula_id) === String(formData.kula_id);
+    return matchComm && matchSub && matchKula;
+  });
+
+  const availableVagaiyaras = vagaiyaras.filter(v => {
+    const matchComm = String(v.community_id) === String(formData.community_id);
+    const matchSub = !formData.sub_community_id || String(v.sub_community_id) === String(formData.sub_community_id);
+    const matchKula = !formData.kula_id || String(v.kula_id) === String(formData.kula_id);
+    return matchComm && matchSub && matchKula;
+  });
+
+  const STEPS = [
+    { number: 1, title: 'அடிப்படை விவரங்கள்', subtitle: 'Basic Details' },
+    { number: 2, title: 'தெய்வங்கள்', subtitle: 'Deities' },
+    { number: 3, title: 'வரலாறு & பாடல்கள்', subtitle: 'History & Songs' },
+    { number: 4, title: 'சமூகம் & குலதெய்வம்', subtitle: 'Community & Deity' }
+  ];
+
   return (
     <div className="form-card">
       <div className="form-header">
@@ -655,262 +863,630 @@ const Kovil = () => {
         <p>கோவிலின் வரலாறு, அமைப்பு மற்றும் சிறப்பம்சங்களை இங்கே பதிவிடவும்.</p>
       </div>
 
-      <div className="card">
-        <form onSubmit={handleSubmit}>
-          <div className="form-grid">
-            <FormInput
-              label="மூலவர் பெயர் (Mulavar Name)"
-              name="mulavarDisplay"
-              value={templeInfo.mulavarName}
-              icon={User}
-              readOnly
-            />
-
-            <FormInput
-              label="கோவில் பெயர் (Temple Name)"
-              name="templeDisplay"
-              value={templeInfo.templeName}
-              icon={Church}
-              readOnly
-            />
-
-            <FormInput
-              label="தொன்மை (Heritage/Age)"
-              name="heritage"
-              value={formData.heritage}
-              onChange={handleChange}
-              icon={History}
-              placeholder="எ.கா: 1000 வருடங்கள்"
-            />
-
-            <FormInput
-              label="கோயில் அமைப்பு (Temple Structure)"
-              name="templeStructure"
-              value={formData.templeStructure}
-              onChange={handleChange}
-              icon={Building}
-              placeholder="கோவில் அமைப்பை விளக்கவும்"
-            />
-
-            <FormInput
-              label="திருக்கோவில் அமைப்பு (Sanctum Structure)"
-              name="sanctumStructure"
-              value={formData.sanctumStructure}
-              onChange={handleChange}
-              icon={Layers}
-              placeholder="கருவறை அமைப்பு"
-            />
-
-            <FormSelect
-              label="நிலை (Number of Tiers)"
-              name="status"
-              value={formData.status}
-              onChange={handleChange}
-              icon={Activity}
-              options={['ஒன்று', 'மூன்று', 'ஐந்து', 'ஏழு', 'ஒன்பது', 'பதினொன்று']}
-            />
-
-            <div className="form-group">
-              <label className="form-label">வழிபாட்டு வகை (Worship Type)</label>
-              <div style={{ display: 'flex', gap: '16px', marginTop: '8px' }}>
-                {['குலத்தவர் மட்டும்', 'குலத்தவர் + பொது', 'பொது மட்டும்'].map(type => (
-                  <label key={type} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', cursor: 'pointer' }}>
-                    <input
-                      type="radio"
-                      name="worshipType"
-                      value={type}
-                      checked={formData.worshipType === type}
-                      onChange={handleChange}
-                      className="form-check-input"
-                    /> {type}
-                  </label>
-                ))}
+      {/* Step Indicators */}
+      <div style={{ display: 'flex', gap: '16px', marginBottom: '24px', flexWrap: 'wrap' }}>
+        {STEPS.map(step => {
+          const isActive = activeStep === step.number;
+          const isCompleted = activeStep > step.number;
+          return (
+            <div
+              key={step.number}
+              onClick={() => setActiveStep(step.number)}
+              style={{
+                flex: 1,
+                minWidth: '150px',
+                padding: '12px 16px',
+                borderRadius: '12px',
+                border: `1.5px solid ${isActive ? '#6366f1' : '#e2e8f0'}`,
+                background: isActive ? '#f5f3ff' : '#ffffff',
+                cursor: 'pointer',
+                transition: 'all 0.2s',
+                boxShadow: isActive ? '0 4px 12px rgba(99, 102, 241, 0.08)' : 'none'
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div style={{
+                  width: '24px',
+                  height: '24px',
+                  borderRadius: '50%',
+                  background: isActive ? '#6366f1' : isCompleted ? '#10b981' : '#cbd5e1',
+                  color: '#ffffff',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '12px',
+                  fontWeight: '700'
+                }}>
+                  {isCompleted ? '✓' : step.number}
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                  <span style={{ fontSize: '13px', fontWeight: '700', color: isActive ? '#4f46e5' : '#1e293b' }}>{step.title}</span>
+                  <span style={{ fontSize: '11px', color: '#64748b' }}>{step.subtitle}</span>
+                </div>
               </div>
             </div>
+          );
+        })}
+      </div>
 
-            <DynamicInputList
-              label="மண்டபங்கள் (Mandapams)"
-              name="mandapams"
-              values={formData.mandapams}
-              onChange={handleArrayChange}
-              icon={Building}
-              placeholder="மண்டபங்களின் பெயர்கள்"
-            />
+      <div className="card">
+        <form onSubmit={handleSubmit}>
 
-            <DynamicDeityList
-              label="தெய்வங்கள் மற்றும் திசைகள் (Deities and Directions)"
-              name="theivankal"
-              values={formData.theivankal || [{ deivam: '', thesai: '' }]}
-              onChange={handleArrayChange}
-            />
+          {activeStep === 1 && (
+            <div className="form-grid">
+              <FormInput
+                label="மூலவர் பெயர் (Mulavar Name)"
+                name="mulavarDisplay"
+                value={templeInfo.mulavarName}
+                icon={User}
+                readOnly
+              />
 
-            <div className="form-group" style={{ gridColumn: 'span 2' }}>
-              <div style={{
-                background: '#f8fafc',
-                padding: '16px',
-                borderRadius: '12px',
-                border: '1px solid #e2e8f0',
-                height: '100%',
-                display: 'flex',
-                flexDirection: 'column',
-                justifyContent: 'center'
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
+              <FormInput
+                label="கோவில் பெயர் (Temple Name)"
+                name="templeDisplay"
+                value={templeInfo.templeName}
+                icon={Church}
+                readOnly
+              />
+
+              <FormInput
+                label="தொன்மை (Heritage/Age)"
+                name="heritage"
+                value={formData.heritage}
+                onChange={handleChange}
+                icon={History}
+                placeholder="எ.கா: 1000 வருடங்கள்"
+              />
+
+              <FormInput
+                label="கோயில் அமைப்பு (Temple Structure)"
+                name="templeStructure"
+                value={formData.templeStructure}
+                onChange={handleChange}
+                icon={Building}
+                placeholder="கோவில் அமைப்பை விளக்கவும்"
+              />
+
+              <FormInput
+                label="திருக்கோவில் அமைப்பு (Sanctum Structure)"
+                name="sanctumStructure"
+                value={formData.sanctumStructure}
+                onChange={handleChange}
+                icon={Layers}
+                placeholder="கருவறை அமைப்பு"
+              />
+
+              <FormSelect
+                label="நிலை (Number of Tiers)"
+                name="status"
+                value={formData.status}
+                onChange={handleChange}
+                icon={Activity}
+                options={['ஒன்று', 'மூன்று', 'ஐந்து', 'ஏழு', 'ஒன்பது', 'பதினொன்று']}
+              />
+
+              <div className="form-group">
+                <label className="form-label">வழிபாட்டு வகை (Worship Type)</label>
+                <div style={{ display: 'flex', gap: '16px', marginTop: '8px' }}>
+                  {['குலத்தவர் மட்டும்', 'குலத்தவர் + பொது', 'பொது மட்டும்'].map(type => (
+                    <label key={type} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', cursor: 'pointer' }}>
+                      <input
+                        type="radio"
+                        name="worshipType"
+                        value={type}
+                        checked={formData.worshipType === type}
+                        onChange={handleChange}
+                        className="form-check-input"
+                      /> {type}
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              <DynamicInputList
+                label="மண்டபங்கள் (Mandapams)"
+                name="mandapams"
+                values={formData.mandapams}
+                onChange={handleArrayChange}
+                icon={Building}
+                placeholder="மண்டபங்களின் பெயர்கள்"
+              />
+
+              <div className="form-group" style={{ gridColumn: 'span 2' }}>
+                <div style={{
+                  background: '#f8fafc',
+                  padding: '16px',
+                  borderRadius: '12px',
+                  border: '1px solid #e2e8f0',
+                  height: '100%',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'center'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
+                    <input
+                      type="checkbox"
+                      checked={showDirections}
+                      onChange={(e) => setShowDirections(e.target.checked)}
+                      id="showDir"
+                      className="form-check-input"
+                    />
+                    <label htmlFor="showDir" style={{ fontWeight: 600, fontSize: '14px', color: '#1e293b' }}>
+                      <Compass size={16} style={{ verticalAlign: 'middle', marginRight: '6px' }} />
+                      இராஜகோபுரம் திசை (Rajagopuram Direction)
+                    </label>
+                  </div>
+
+                  {showDirections && (
+                    <div style={{ display: 'flex', gap: '20px', paddingLeft: '26px' }}>
+                      {['கிழக்கு', 'மேற்கு', 'வடக்கு', 'தெற்கு'].map(dir => (
+                        <label key={dir} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', cursor: 'pointer' }}>
+                          <input
+                            type="checkbox"
+                            checked={directions[dir]}
+                            onChange={() => handleDirectionChange(dir)}
+                          />
+                          {dir}
+                        </label>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="form-group" style={{ gridColumn: 'span 3' }}>
+                <DynamicInputList
+                  label="தல வேறு பெயர்கள் (Other Names of the Place)"
+                  name="otherNames"
+                  values={formData.otherNames}
+                  onChange={handleArrayChange}
+                  icon={Bookmark}
+                  placeholder="தலத்திற்கு வழங்கும் வேறு பெயர்கள்..."
+                />
+              </div>
+            </div>
+          )}
+
+          {activeStep === 2 && (
+            <div className="form-grid">
+              <DynamicDeityList
+                label="தெய்வங்கள் மற்றும் திசைகள் (Deities and Directions)"
+                name="theivankal"
+                values={formData.theivankal || [{ deivam: '', thesai: '' }]}
+                onChange={handleArrayChange}
+              />
+            </div>
+          )}
+
+          {activeStep === 3 && (
+            <div className="form-grid">
+              <FormTextArea
+                label="தல சிறப்பு (Special Features of the Place)"
+                name="specialFeatures"
+                value={formData.specialFeatures}
+                onChange={handleChange}
+                icon={Sparkles}
+                placeholder="தலத்தின் முக்கிய சிறப்புகள்..."
+                rows={2}
+              />
+
+              <FormTextArea
+                label="சிறப்பம்சம் (Unique Characteristics)"
+                name="characteristics"
+                value={formData.characteristics}
+                onChange={handleChange}
+                icon={Info}
+                placeholder="கோவிலின் தனித்துவமான சிறப்பம்சங்கள்..."
+                rows={2}
+              />
+
+              <FormTextArea
+                label="தல நடந்த அற்புதங்கள் (Miracles Happened)"
+                name="miracles"
+                value={formData.miracles}
+                onChange={handleChange}
+                icon={Activity}
+                placeholder="தலத்தில் நடந்த முக்கிய அற்புதங்கள்..."
+                rows={2}
+              />
+
+              <FormTextArea
+                label="தல வரலாறு (History of the Place)"
+                name="history"
+                value={formData.history}
+                onChange={handleChange}
+                icon={History}
+                placeholder="தலத்தின் முழுமையான வரலாறு..."
+                rows={4}
+              />
+
+              <div className="form-group">
+                <div style={{
+                  background: formData.songPlace ? '#ecfdf5' : '#f8fafc',
+                  padding: '16px',
+                  borderRadius: '12px',
+                  border: formData.songPlace ? '1px solid #10b981' : '1px solid #e2e8f0',
+                  height: '100%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  transition: 'all 0.2s'
+                }}>
                   <input
                     type="checkbox"
-                    checked={showDirections}
-                    onChange={(e) => setShowDirections(e.target.checked)}
-                    id="showDir"
+                    name="songPlace"
+                    checked={formData.songPlace}
+                    onChange={handleChange}
+                    id="songPlace"
                     className="form-check-input"
                   />
-                  <label htmlFor="showDir" style={{ fontWeight: 600, fontSize: '14px', color: '#1e293b' }}>
-                    <Compass size={16} style={{ verticalAlign: 'middle', marginRight: '6px' }} />
-                    இராஜகோபுரம் திசை (Rajagopuram Direction)
+                  <label htmlFor="songPlace" style={{ fontWeight: 600, fontSize: '14px', color: formData.songPlace ? '#047857' : '#1e293b', marginLeft: '10px' }}>
+                    <Music size={16} style={{ verticalAlign: 'middle', marginRight: '6px' }} />
+                    பாடல் பெற்ற ஸ்தலமா (Is song place?)
                   </label>
                 </div>
+              </div>
 
-                {showDirections && (
-                  <div style={{ display: 'flex', gap: '20px', paddingLeft: '26px' }}>
-                    {['கிழக்கு', 'மேற்கு', 'வடக்கு', 'தெற்கு'].map(dir => (
-                      <label key={dir} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', cursor: 'pointer' }}>
-                        <input
-                          type="checkbox"
-                          checked={directions[dir]}
-                          onChange={() => handleDirectionChange(dir)}
-                        />
-                        {dir}
-                      </label>
-                    ))}
+              <FormInput
+                label="பாடல் பாடியவர் (Song Sung By)"
+                name="padalPadiyavar"
+                value={formData.padalPadiyavar}
+                onChange={handleChange}
+                icon={User}
+                placeholder="பாடல் பாடியவர் பெயர்..."
+              />
+
+              <FormInput
+                label="எந்தப் பதி (Which Pathi)"
+                name="enthaPathi"
+                value={formData.enthaPathi}
+                onChange={handleChange}
+                icon={MapPin}
+                placeholder="எந்தப் பதி / பகுதி..."
+              />
+
+              <FormTextArea
+                label="பாடல் குறிப்பு (Song Note)"
+                name="songNote"
+                value={formData.songNote}
+                onChange={handleChange}
+                icon={Music}
+                placeholder="தேவார, திருவாசக பாடல்கள் பற்றிய குறிப்புகள்..."
+                rows={2}
+              />
+            </div>
+          )}
+
+          {activeStep === 4 && (
+            <div className="form-grid">
+              {/* Community select section */}
+              <div className="form-group" style={{ gridColumn: 'span 3', borderBottom: '2px solid #e2e8f0', marginBottom: '10px', paddingBottom: '10px' }}>
+                <h3 style={{ margin: '0 0 10px 0', fontSize: '18px', fontWeight: '800', color: '#1e293b', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Users size={22} color="#6366f1" />
+                  சமூகம் மற்றும் குலதெய்வம் (Community & Deity Details)
+                </h3>
+              </div>
+
+              <FormSelectObj
+                label="சமூகம் (Select Community) *"
+                name="community_id"
+                value={formData.community_id}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setFormData(prev => ({
+                    ...prev,
+                    community_id: val,
+                    sub_community_id: '',
+                    kula_id: '',
+                    kula_deivam_id: '',
+                    vagaiyara_id: '',
+                    tharpothaiya_vagaiyara: ''
+                  }));
+                }}
+                icon={Users}
+                options={communities}
+                placeholder="-- சமூகம் தேர்ந்தெடுக்கவும் --"
+              />
+
+              <FormSelectObj
+                label="உட்பிரிவு (Sub-Community)"
+                name="sub_community_id"
+                value={formData.sub_community_id}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setFormData(prev => ({
+                    ...prev,
+                    sub_community_id: val,
+                    kula_deivam_id: ''
+                  }));
+                }}
+                icon={Layers}
+                options={availableSubCommunities}
+                placeholder="-- உட்பிரிவு தேர்ந்தெடுக்கவும் --"
+                disabled={!formData.community_id}
+              />
+
+              <FormSelectObj
+                label="குலம் (Kulam)"
+                name="kula_id"
+                value={formData.kula_id}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setFormData(prev => ({
+                    ...prev,
+                    kula_id: val,
+                    kula_deivam_id: ''
+                  }));
+                }}
+                icon={Bookmark}
+                options={availableKulams}
+                placeholder="-- குலம் தேர்ந்தெடுக்கவும் --"
+                disabled={!formData.community_id}
+              />
+
+              {/* Deity List selection section */}
+              <div className="form-group" style={{ gridColumn: 'span 3', background: '#f8fafc', padding: '20px', borderRadius: '12px', border: '1px solid #e2e8f0', marginTop: '10px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                  <label className="form-label" style={{ fontWeight: '750', fontSize: '13.5px', color: '#1e293b', margin: 0, display: 'block' }}>
+                    குல தெய்வம் பட்டியல் (Kula Deivam List) *
+                  </label>
+                  {formData.kula_id && (
+                    <Link
+                      to="/kullam_people"
+                      className="btn btn-outline"
+                      style={{
+                        padding: '6px 12px',
+                        fontSize: '12px',
+                        fontWeight: '600',
+                        borderColor: '#6366f1',
+                        color: '#6366f1',
+                        background: 'transparent',
+                        borderRadius: '10px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        height: '32px',
+                        textDecoration: 'none'
+                      }}
+                    >
+                      <Plus size={14} /> குல மக்கள் சேர்க்க (Add Kula People)
+                    </Link>
+                  )}
+                </div>
+                <p style={{ margin: '0 0 14px 0', fontSize: '11px', color: '#64748b' }}>தங்கள் உட்பிரிவிற்குரிய குல தெய்வத்தை தேர்வு செய்யவும்.</p>
+
+                {!formData.kula_id ? (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '24px', background: '#fff', border: '1.5px dashed #cbd5e1', borderRadius: '10px', color: '#64748b', fontSize: '12.5px', justifyContent: 'center' }}>
+                    குலம் தேர்ந்தெடுத்தவுடன் குலதெய்வம் பட்டியல் காட்டப்படும். (Please select Kulam first)
+                  </div>
+                ) : availableKulaDeivams.length === 0 ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', padding: '24px', background: '#fff', border: '1.5px dashed #cbd5e1', borderRadius: '10px', color: '#64748b', fontSize: '12.5px', textAlign: 'center' }}>
+                    <span>தற்போது குல தெய்வங்கள் எதுவும் இல்லை.</span>
+                  </div>
+                ) : (
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '12px', maxHeight: '200px', overflowY: 'auto', paddingRight: '4px' }}>
+                    {availableKulaDeivams.map(kd => {
+                      const isSelected = String(kd.id) === String(formData.kula_deivam_id);
+                      return (
+                        <div
+                          key={kd.id}
+                          onClick={() => {
+                            setFormData(prev => ({
+                              ...prev,
+                              kula_deivam_id: isSelected ? '' : kd.id
+                            }));
+                          }}
+                          style={{
+                            padding: '10px 14px',
+                            borderRadius: '12px',
+                            border: `2px solid ${isSelected ? '#4f46e5' : '#e2e8f0'}`,
+                            background: isSelected ? '#eef2ff' : '#ffffff',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '12px',
+                            transition: 'all 0.2s ease',
+                            boxShadow: isSelected ? '0 4px 12px rgba(79, 70, 229, 0.12)' : '0 2px 4px rgba(0,0,0,0.02)'
+                          }}
+                        >
+                          <img
+                            src={getKulaDeivamImageUrl(kd)}
+                            alt={kd.name_en}
+                            onError={(e) => {
+                              e.target.src = BASE_API + '/files/default_god.svg';
+                              e.target.onerror = null;
+                            }}
+                            style={{
+                              width: '38px',
+                              height: '38px',
+                              borderRadius: '8px',
+                              objectFit: 'cover',
+                              border: '1.5px solid #e2e8f0',
+                              background: '#f8fafc',
+                              flexShrink: 0
+                            }}
+                          />
+                          <div style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
+                            <span style={{ fontSize: '13px', fontWeight: '700', color: isSelected ? '#1e1b4b' : '#334155' }}>{kd.name_ta}</span>
+                            <span style={{ fontSize: '11px', color: isSelected ? '#4f46e5' : '#64748b', marginTop: '2px' }}>{kd.name_en}</span>
+                          </div>
+                          {isSelected && (
+                            <div style={{ width: '18px', height: '18px', borderRadius: '50%', backgroundColor: '#4f46e5', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', flexShrink: 0 }}>
+                              ✓
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
               </div>
-            </div>
 
-            <div className="form-group" style={{ gridColumn: 'span 3' }}>
-              <DynamicInputList
-                label="தல வேறு பெயர்கள் (Other Names of the Place)"
-                name="otherNames"
-                values={formData.otherNames}
-                onChange={handleArrayChange}
-                icon={Bookmark}
-                placeholder="தலத்திற்கு வழங்கும் வேறு பெயர்கள்..."
+              <FormSelectObj
+                label="வகைரா (Select Vagaiyara)"
+                name="vagaiyara_id"
+                value={formData.vagaiyara_id}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setFormData(prev => ({
+                    ...prev,
+                    vagaiyara_id: val
+                  }));
+                }}
+                icon={Building}
+                options={availableVagaiyaras}
+                placeholder="-- வகைரா தேர்ந்தெடுக்கவும் --"
+                disabled={!formData.community_id}
               />
-            </div>
 
-            <FormTextArea
-              label="தல சிறப்பு (Special Features of the Place)"
-              name="specialFeatures"
-              value={formData.specialFeatures}
-              onChange={handleChange}
-              icon={Sparkles}
-              placeholder="தலத்தின் முக்கிய சிறப்புகள்..."
-              rows={2}
-            />
+              <FormInput
+                label="தற்போதைய வகையரா (Tharpothaiya Vagaiyara)"
+                name="tharpothaiya_vagaiyara"
+                value={formData.tharpothaiya_vagaiyara}
+                onChange={handleChange}
+                icon={Building}
+                placeholder="தற்போதைய வகையராவை உள்ளிடவும்"
+              />
 
-            <FormTextArea
-              label="சிறப்பம்சம் (Unique Characteristics)"
-              name="characteristics"
-              value={formData.characteristics}
-              onChange={handleChange}
-              icon={Info}
-              placeholder="கோவிலின் தனித்துவமான சிறப்பம்சங்கள்..."
-              rows={2}
-            />
-
-            <FormTextArea
-              label="தல நடந்த அற்புதங்கள் (Miracles Happened)"
-              name="miracles"
-              value={formData.miracles}
-              onChange={handleChange}
-              icon={Activity}
-              placeholder="தலத்தில் நடந்த முக்கிய அற்புதங்கள்..."
-              rows={2}
-            />
-
-            <FormTextArea
-              label="தல வரலாறு (History of the Place)"
-              name="history"
-              value={formData.history}
-              onChange={handleChange}
-              icon={History}
-              placeholder="தலத்தின் முழுமையான வரலாறு..."
-              rows={4}
-            />
-
-            <div className="form-group">
-              <div style={{
-                background: formData.songPlace ? '#ecfdf5' : '#f8fafc',
-                padding: '16px',
-                borderRadius: '12px',
-                border: formData.songPlace ? '1px solid #10b981' : '1px solid #e2e8f0',
-                height: '100%',
-                display: 'flex',
-                alignItems: 'center',
-                transition: 'all 0.2s'
-              }}>
-                <input
-                  type="checkbox"
-                  name="songPlace"
-                  checked={formData.songPlace}
-                  onChange={handleChange}
-                  id="songPlace"
-                  className="form-check-input"
-                />
-                <label htmlFor="songPlace" style={{ fontWeight: 600, fontSize: '14px', color: formData.songPlace ? '#047857' : '#1e293b', marginLeft: '10px' }}>
-                  <Music size={16} style={{ verticalAlign: 'middle', marginRight: '6px' }} />
-                  பாடல் பெற்ற ஸ்தலமா (Is song place?)
-                </label>
+              <div className="form-group">
+                <label className="form-label">எந்த தலைமுறை (Select Generation)</label>
+                <div className="input-wrapper">
+                  <Layers className="input-icon" size={18} />
+                  <select
+                    name="generation_no"
+                    id="generation_no"
+                    className="form-control"
+                    value={formData.generation_no}
+                    onChange={handleChange}
+                    style={{ paddingLeft: '42px', appearance: 'auto' }}
+                  >
+                    <option value="">-- தலைமுறையை தேர்ந்தெடுக்கவும் --</option>
+                    {GENERATIONS.map(g => (
+                      <option key={g.value} value={g.value}>{g.label}</option>
+                    ))}
+                  </select>
+                </div>
               </div>
-            </div>
 
-            <FormInput
-              label="பாடல் பாடியவர் (Song Sung By)"
-              name="padalPadiyavar"
-              value={formData.padalPadiyavar}
-              onChange={handleChange}
-              icon={User}
-              placeholder="பாடல் பாடியவர் பெயர்..."
-            />
+              <div className="form-group">
+                <label className="form-label">திருமணம் நிலை (Select Marital Status)</label>
+                <div style={{ display: 'flex', gap: '16px', marginTop: '8px' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', cursor: 'pointer' }}>
+                    <input
+                      type="radio"
+                      name="marital_status"
+                      value="unmarried"
+                      checked={formData.marital_status === 'unmarried'}
+                      onChange={handleChange}
+                      className="form-check-input"
+                    />
+                    Unmarried (திருமணமாகாதவர்)
+                  </label>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', cursor: 'pointer' }}>
+                    <input
+                      type="radio"
+                      name="marital_status"
+                      value="married"
+                      checked={formData.marital_status === 'married'}
+                      onChange={handleChange}
+                      className="form-check-input"
+                    />
+                    Married (திருமணமானவர்)
+                  </label>
+                </div>
+              </div>
 
-            <FormInput
-              label="எந்தப் பதி (Which Pathi)"
-              name="enthaPathi"
-              value={formData.enthaPathi}
-              onChange={handleChange}
-              icon={MapPin}
-              placeholder="எந்தப் பதி / பகுதி..."
-            />
-
-            <FormTextArea
-              label="பாடல் குறிப்பு (Song Note)"
-              name="songNote"
-              value={formData.songNote}
-              onChange={handleChange}
-              icon={Music}
-              placeholder="தேவார, திருவாசக பாடல்கள் பற்றிய குறிப்புகள்..."
-              rows={2}
-            />
-          </div>
-
-          <div className="form-actions">
-            <button
-              type="button"
-              className="btn btn-outline"
-              onClick={() => navigate(-1)}
-            >
-              Back
-            </button>
-            <button
-              type="submit"
-              className="btn btn-primary"
-              disabled={loading}
-            >
-              {loading ? 'Processing...' : (
+              {formData.marital_status === 'married' && (
                 <>
-                  Save Temple Details <Save size={18} />
+                  <FormInput
+                    label="மனைவி பெயர் (Wife's Name)"
+                    name="spouse_name"
+                    value={formData.spouse_name}
+                    onChange={handleChange}
+                    icon={User}
+                    placeholder="மனைவி பெயரை உள்ளிடவும்"
+                  />
+
+                  <div className="form-group">
+                    <label className="form-label">மனைவியின் குலதெய்வம் (Wife's Kula Deivam)</label>
+                    <div className="input-wrapper">
+                      <Sparkles className="input-icon" size={18} />
+                      <input
+                        type="text"
+                        className="form-control"
+                        placeholder="எ.கா: முனீஸ்வரன் / காளியம்மன்"
+                        value={wifeKulaDeivam}
+                        onChange={(e) => {
+                          const textVal = e.target.value;
+                          setWifeKulaDeivam(textVal);
+
+                          // Try to find matching deity and update spouse_kula_deivam_id
+                          const cleanWifeDeity = textVal.trim().toLowerCase();
+                          const foundDeity = kulaDeivams.find(kd =>
+                            cleanWifeDeity.includes(kd.name_ta.toLowerCase()) ||
+                            cleanWifeDeity.includes(kd.name_en.toLowerCase())
+                          );
+                          setFormData(prev => ({
+                            ...prev,
+                            spouse_kula_deivam_id: foundDeity ? foundDeity.id : ''
+                          }));
+                        }}
+                        list="kulaDeivamsList"
+                        style={{ paddingLeft: '42px' }}
+                      />
+                      <datalist id="kulaDeivamsList">
+                        {kulaDeivams.map(kd => (
+                          <option key={kd.id} value={`${kd.name_ta} (${kd.name_en})`} />
+                        ))}
+                      </datalist>
+                    </div>
+                  </div>
                 </>
               )}
-            </button>
+            </div>
+          )}
+
+          <div className="form-actions">
+            {activeStep > 1 ? (
+              <button
+                type="button"
+                className="btn btn-outline"
+                onClick={() => setActiveStep(prev => prev - 1)}
+              >
+                Previous Step
+              </button>
+            ) : (
+              <button
+                type="button"
+                className="btn btn-outline"
+                onClick={() => navigate(-1)}
+              >
+                Back
+              </button>
+            )}
+
+            {activeStep < 4 ? (
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={() => setActiveStep(prev => prev + 1)}
+                style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
+              >
+                Next Step <ArrowRight size={18} />
+              </button>
+            ) : (
+              <button
+                type="submit"
+                className="btn btn-primary"
+                disabled={loading}
+              >
+                {loading ? 'Processing...' : (
+                  <>
+                    Save Temple Details <Save size={18} />
+                  </>
+                )}
+              </button>
+            )}
           </div>
         </form>
       </div>

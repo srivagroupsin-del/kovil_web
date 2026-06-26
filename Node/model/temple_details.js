@@ -25,6 +25,16 @@ const templeDetailSchema = Joi.object({
   padal_padiyavar: Joi.string().allow('', null).optional(),
   entha_pathi: Joi.string().allow('', null).optional(),
   worship_type: Joi.string().allow('', null).optional(),
+  community_id: Joi.number().integer().allow('', null).optional(),
+  sub_community_id: Joi.number().integer().allow('', null).optional(),
+  kula_id: Joi.number().integer().allow('', null).optional(),
+  kula_deivam_id: Joi.number().integer().allow('', null).optional(),
+  vagaiyara_id: Joi.number().integer().allow('', null).optional(),
+  tharpothaiya_vagaiyara: Joi.string().allow('', null).optional(),
+  generation_no: Joi.number().integer().allow('', null).optional(),
+  marital_status: Joi.string().valid('married', 'unmarried').allow('', null).optional(),
+  spouse_name: Joi.string().allow('', null).optional(),
+  spouse_kula_deivam_id: Joi.number().integer().allow('', null).optional(),
   id: Joi.number().integer().optional(),
   theivankal: Joi.alternatives().try(
     Joi.array().items(
@@ -75,9 +85,9 @@ const TempleDetailsController = (function () {
         try {
           const insertQuery = `
           INSERT INTO temple_details
-          (active, characteristics, created_date, heritage, history, miracles, rajagopuram_direction, sanctum_structure, song_note, song_place, special_features, status, temple_structure, temple_basic_id, padal_padiyavar, entha_pathi, worship_type)
+          (active, characteristics, created_date, heritage, history, miracles, rajagopuram_direction, sanctum_structure, song_note, song_place, special_features, status, temple_structure, temple_basic_id, padal_padiyavar, entha_pathi, worship_type, community_id, sub_community_id, kula_id, kula_deivam_id, vagaiyara_id, tharpothaiya_vagaiyara, generation_no, marital_status, spouse_name, spouse_kula_deivam_id)
           VALUES
-          (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+          (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
         `;
 
           const [result] = await client.query(insertQuery, [
@@ -98,6 +108,16 @@ const TempleDetailsController = (function () {
             value.padal_padiyavar || null,
             value.entha_pathi || null,
             value.worship_type || null,
+            value.community_id ? parseInt(value.community_id, 10) : null,
+            value.sub_community_id ? parseInt(value.sub_community_id, 10) : null,
+            value.kula_id ? parseInt(value.kula_id, 10) : null,
+            value.kula_deivam_id ? parseInt(value.kula_deivam_id, 10) : null,
+            value.vagaiyara_id ? parseInt(value.vagaiyara_id, 10) : null,
+            value.tharpothaiya_vagaiyara || null,
+            value.generation_no ? parseInt(value.generation_no, 10) : null,
+            value.marital_status || 'unmarried',
+            value.spouse_name || null,
+            value.spouse_kula_deivam_id ? parseInt(value.spouse_kula_deivam_id, 10) : null,
           ]);
 
           const templeDetailsId = result.insertId;
@@ -167,7 +187,7 @@ const TempleDetailsController = (function () {
 
         try {
           const query = `
-            SELECT id, CAST(active AS UNSIGNED) as active, characteristics, created_date, heritage, history, miracles, rajagopuram_direction, sanctum_structure, song_note, CAST(song_place AS UNSIGNED) as song_place, special_features, status, temple_structure, temple_basic_id, padal_padiyavar, entha_pathi, worship_type
+            SELECT id, CAST(active AS UNSIGNED) as active, characteristics, created_date, heritage, history, miracles, rajagopuram_direction, sanctum_structure, song_note, CAST(song_place AS UNSIGNED) as song_place, special_features, status, temple_structure, temple_basic_id, padal_padiyavar, entha_pathi, worship_type, community_id, sub_community_id, kula_id, kula_deivam_id, vagaiyara_id, tharpothaiya_vagaiyara, generation_no, marital_status, spouse_name, spouse_kula_deivam_id
             FROM temple_details
             ORDER BY id DESC;
           `;
@@ -209,7 +229,7 @@ const TempleDetailsController = (function () {
 
         try {
           const query = `
-            SELECT id, CAST(active AS UNSIGNED) as active, characteristics, created_date, heritage, history, miracles, rajagopuram_direction, sanctum_structure, song_note, CAST(song_place AS UNSIGNED) as song_place, special_features, status, temple_structure, temple_basic_id, padal_padiyavar, entha_pathi, worship_type
+            SELECT id, CAST(active AS UNSIGNED) as active, characteristics, created_date, heritage, history, miracles, rajagopuram_direction, sanctum_structure, song_note, CAST(song_place AS UNSIGNED) as song_place, special_features, status, temple_structure, temple_basic_id, padal_padiyavar, entha_pathi, worship_type, community_id, sub_community_id, kula_id, kula_deivam_id, vagaiyara_id, tharpothaiya_vagaiyara, generation_no, marital_status, spouse_name, spouse_kula_deivam_id
             FROM temple_details
             WHERE id = ?
           `;
@@ -255,7 +275,7 @@ const TempleDetailsController = (function () {
 
         try {
           const query = `
-            SELECT id, CAST(active AS UNSIGNED) as active, characteristics, created_date, heritage, history, miracles, rajagopuram_direction, sanctum_structure, song_note, CAST(song_place AS UNSIGNED) as song_place, special_features, status, temple_structure, temple_basic_id, padal_padiyavar, entha_pathi, worship_type
+            SELECT id, CAST(active AS UNSIGNED) as active, characteristics, created_date, heritage, history, miracles, rajagopuram_direction, sanctum_structure, song_note, CAST(song_place AS UNSIGNED) as song_place, special_features, status, temple_structure, temple_basic_id, padal_padiyavar, entha_pathi, worship_type, community_id, sub_community_id, kula_id, kula_deivam_id, vagaiyara_id, tharpothaiya_vagaiyara, generation_no, marital_status, spouse_name, spouse_kula_deivam_id
             FROM temple_details
             WHERE temple_basic_id = ?
           `;
@@ -315,7 +335,7 @@ const TempleDetailsController = (function () {
 
           const updateQuery = `
             UPDATE temple_details
-            SET active = ?, characteristics = ?, created_date = ?, heritage = ?, history = ?, miracles = ?, rajagopuram_direction = ?, sanctum_structure = ?, song_note = ?, song_place = ?, special_features = ?, status = ?, temple_structure = ?, temple_basic_id = ?, padal_padiyavar = ?, entha_pathi = ?, worship_type = ?
+            SET active = ?, characteristics = ?, created_date = ?, heritage = ?, history = ?, miracles = ?, rajagopuram_direction = ?, sanctum_structure = ?, song_note = ?, song_place = ?, special_features = ?, status = ?, temple_structure = ?, temple_basic_id = ?, padal_padiyavar = ?, entha_pathi = ?, worship_type = ?, community_id = ?, sub_community_id = ?, kula_id = ?, kula_deivam_id = ?, vagaiyara_id = ?, tharpothaiya_vagaiyara = ?, generation_no = ?, marital_status = ?, spouse_name = ?, spouse_kula_deivam_id = ?
             WHERE id = ?
           `;
           await client.query(updateQuery, [
@@ -336,6 +356,16 @@ const TempleDetailsController = (function () {
             value.padal_padiyavar || null,
             value.entha_pathi || null,
             value.worship_type || null,
+            value.community_id ? parseInt(value.community_id, 10) : null,
+            value.sub_community_id ? parseInt(value.sub_community_id, 10) : null,
+            value.kula_id ? parseInt(value.kula_id, 10) : null,
+            value.kula_deivam_id ? parseInt(value.kula_deivam_id, 10) : null,
+            value.vagaiyara_id ? parseInt(value.vagaiyara_id, 10) : null,
+            value.tharpothaiya_vagaiyara || null,
+            value.generation_no ? parseInt(value.generation_no, 10) : null,
+            value.marital_status || 'unmarried',
+            value.spouse_name || null,
+            value.spouse_kula_deivam_id ? parseInt(value.spouse_kula_deivam_id, 10) : null,
             value.id,
           ]);
 
