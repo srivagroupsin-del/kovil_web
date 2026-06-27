@@ -75,7 +75,6 @@ const FormSelect = ({ label, name, value, onChange, icon: Icon, options, require
 
 const KullamPeople = () => {
   const [searchQuery, setSearchQuery] = useState('');
-  const [showForm, setShowForm] = useState(false);
   const [formData, setFormData] = useState({
     vagaiyara: '0',
     entha_uru: '',
@@ -182,7 +181,6 @@ const KullamPeople = () => {
       vagaiyara_nickname: ''
     });
     setEditingId(null);
-    setShowForm(false);
   };
 
   const handleSave = async (e) => {
@@ -232,7 +230,6 @@ const KullamPeople = () => {
       pincode: item.pincode || '',
       vagaiyara_nickname: item.vagaiyara_nickname || ''
     });
-    setShowForm(true);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -269,38 +266,31 @@ const KullamPeople = () => {
       </div>
 
       <div className="card" style={{ marginBottom: '24px', padding: '20px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: showForm ? '20px' : '0' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <PlusCircle size={18} color="#6366f1" />
-            <h3 style={{ margin: 0, fontSize: '16px', fontWeight: '700' }}>
-              {editingId ? 'குடும்ப விவரத்தை மாற்ற (Edit Family)' : 'புதிய குடும்பத்தை சேர்க்க (Add New Family)'}
-            </h3>
-          </div>
-          <button onClick={() => setShowForm(!showForm)} className="btn btn-primary" style={{ height: '36px', padding: '0 16px', fontSize: '13px' }}>
-            {showForm ? <><XCircle size={14} /> Cancel</> : <><Plus size={14} /> Add Family</>}
-          </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
+          <PlusCircle size={18} color="#6366f1" />
+          <h3 style={{ margin: 0, fontSize: '16px', fontWeight: '700' }}>
+            {editingId ? 'குடும்ப விவரத்தை மாற்ற (Edit Family)' : 'புதிய குடும்பத்தை சேர்க்க (Add New Family)'}
+          </h3>
         </div>
 
-        {showForm && (
-          <div className="form-grid animate-fade-in" style={{ gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', background: '#f8fafc', padding: '20px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
-            <FormInput label="ஊர் (City)" name="entha_uru" value={formData.entha_uru} onChange={handleInputChange} icon={Home} placeholder="City/Town/Village..." />
-            <FormSelect label="வகைரா (Select Vagaira) *" name="vagaiyara" value={formData.vagaiyara} onChange={handleInputChange} icon={Building2} options={vagaiyaras} placeholder="-- வகைரா தேர்ந்தெடுக்கவும் --" required />
-            <FormInput label="குடும்பத்தின் பட்டப்பெயர் (Family Nickname)" name="vagaiyara_nickname" value={formData.vagaiyara_nickname} onChange={handleInputChange} icon={Tag} placeholder="Nickname..." />
-            
-            
-            <FormInput label="மாவட்டம் (District)" name="district" value={formData.district} onChange={handleInputChange} icon={MapPin} placeholder="District..." />
-            <FormInput label="அஞ்சல் குறியீடு (Pincode)" name="pincode" value={formData.pincode} onChange={handleInputChange} icon={Hash} placeholder="Pincode..." />
+        <div className="form-grid animate-fade-in" style={{ gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', background: '#f8fafc', padding: '20px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+          <FormInput label="ஊர் (City)" name="entha_uru" value={formData.entha_uru} onChange={handleInputChange} icon={Home} placeholder="City/Town/Village..." />
+          <FormSelect label="வகைரா (Select Vagaira) *" name="vagaiyara" value={formData.vagaiyara} onChange={handleInputChange} icon={Building2} options={vagaiyaras} placeholder="-- வகைரா தேர்ந்தெடுக்கவும் --" required />
+          <FormInput label="குடும்பத்தின் பட்டப்பெயர் (Family Nickname)" name="vagaiyara_nickname" value={formData.vagaiyara_nickname} onChange={handleInputChange} icon={Tag} placeholder="Nickname..." />
+          
+          
+          <FormInput label="மாவட்டம் (District)" name="district" value={formData.district} onChange={handleInputChange} icon={MapPin} placeholder="District..." />
+          <FormInput label="அஞ்சல் குறியீடு (Pincode)" name="pincode" value={formData.pincode} onChange={handleInputChange} icon={Hash} placeholder="Pincode..." />
 
-            <div style={{ gridColumn: 'span 3', display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '10px' }}>
-              <button type="button" onClick={clearForm} className="btn btn-outline" style={{ height: '38px' }}>
-                <Eraser size={16}/> Clear
-              </button>
-              <button type="button" onClick={handleSave} className="btn btn-primary" style={{ height: '38px' }}>
-                {editingId ? <>Update <RefreshCw size={16} /></> : <>Save <Save size={16} /></>}
-              </button>
-            </div>
+          <div style={{ gridColumn: 'span 3', display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '10px' }}>
+            <button type="button" onClick={clearForm} className="btn btn-outline" style={{ height: '38px' }}>
+              <Eraser size={16}/> Clear
+            </button>
+            <button type="button" onClick={handleSave} className="btn btn-primary" style={{ height: '38px' }}>
+              {editingId ? <>Update <RefreshCw size={16} /></> : <>Save <Save size={16} /></>}
+            </button>
           </div>
-        )}
+        </div>
       </div>
 
       <div className="card" style={{ padding: 0 }}>
