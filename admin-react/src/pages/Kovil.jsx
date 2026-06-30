@@ -619,8 +619,8 @@ const Kovil = () => {
             community_id: String(v.community_id),
             sub_community_id: String(v.sub_community_id),
             kula_id: String(v.kula_id),
-            name_ta: v.vagaiyara_name_tamil || '',
-            name_en: v.vagaiyara_name_english || '',
+            name_ta: v.our_gen_name_tamil || v.vagaiyara_name_tamil || '',
+            name_en: v.our_gen_name_english || v.vagaiyara_name_english || '',
             sontha_uru: v.native_place || '',
             epo_uru: v.current_place || ''
           })));
@@ -910,7 +910,14 @@ const Kovil = () => {
       </div>
 
       <div className="card">
-        <form onSubmit={handleSubmit}>
+        <form 
+          onSubmit={handleSubmit}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && e.target.tagName !== 'TEXTAREA') {
+              e.preventDefault();
+            }
+          }}
+        >
 
           {activeStep === 1 && (
             <div className="form-grid">
@@ -1451,7 +1458,10 @@ const Kovil = () => {
               <button
                 type="button"
                 className="btn btn-outline"
-                onClick={() => setActiveStep(prev => prev - 1)}
+                onClick={(e) => {
+                  e.preventDefault();
+                  setActiveStep(prev => prev - 1);
+                }}
               >
                 Previous Step
               </button>
@@ -1459,7 +1469,10 @@ const Kovil = () => {
               <button
                 type="button"
                 className="btn btn-outline"
-                onClick={() => navigate(-1)}
+                onClick={(e) => {
+                  e.preventDefault();
+                  navigate(-1);
+                }}
               >
                 Back
               </button>
@@ -1469,7 +1482,10 @@ const Kovil = () => {
               <button
                 type="button"
                 className="btn btn-primary"
-                onClick={() => setActiveStep(prev => prev + 1)}
+                onClick={(e) => {
+                  e.preventDefault();
+                  setActiveStep(prev => prev + 1);
+                }}
                 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
               >
                 Next Step <ArrowRight size={18} />

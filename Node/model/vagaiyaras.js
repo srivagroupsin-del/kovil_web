@@ -11,7 +11,12 @@ const vagaiyaraSchema = Joi.object({
   community_id: Joi.number().integer().required(),
   sub_community_id: Joi.number().integer().required(),
   kula_id: Joi.number().integer().required(),
-  vagaiyara_name_tamil: Joi.string().required(),
+  kula_deivam_id: Joi.number().integer().allow(null).optional(),
+  our_gen_name_tamil: Joi.string().required(),
+  our_gen_name_english: Joi.string().allow('', null).optional(),
+  ancestor_gen_name_tamil: Joi.string().required(),
+  ancestor_gen_name_english: Joi.string().allow('', null).optional(),
+  vagaiyara_name_tamil: Joi.string().allow('', null).optional(),
   vagaiyara_name_english: Joi.string().allow('', null).optional(),
   native_place: Joi.string().allow('', null).optional(),
   current_place: Joi.string().allow('', null).optional(),
@@ -71,15 +76,20 @@ const VagaiyarasController = {
         try {
           const insertQuery = `
             INSERT INTO vagaiyaras
-            (community_id, sub_community_id, kula_id, vagaiyara_name_tamil, vagaiyara_name_english, native_place, current_place, title, info, image_path, logo_path, icon_path, description, history, status)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            (community_id, sub_community_id, kula_id, kula_deivam_id, our_gen_name_tamil, our_gen_name_english, ancestor_gen_name_tamil, ancestor_gen_name_english, vagaiyara_name_tamil, vagaiyara_name_english, native_place, current_place, title, info, image_path, logo_path, icon_path, description, history, status)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
           `;
           const [result] = await client.query(insertQuery, [
             value.community_id,
             value.sub_community_id,
             value.kula_id,
-            value.vagaiyara_name_tamil,
-            value.vagaiyara_name_english || null,
+            value.kula_deivam_id || null,
+            value.our_gen_name_tamil,
+            value.our_gen_name_english || null,
+            value.ancestor_gen_name_tamil,
+            value.ancestor_gen_name_english || null,
+            value.our_gen_name_tamil, // Maintain compatibility
+            value.our_gen_name_english || value.our_gen_name_tamil, // Maintain compatibility
             value.native_place || null,
             value.current_place || null,
             value.title || null,
@@ -124,15 +134,20 @@ const VagaiyarasController = {
         try {
           const updateQuery = `
             UPDATE vagaiyaras
-            SET community_id = ?, sub_community_id = ?, kula_id = ?, vagaiyara_name_tamil = ?, vagaiyara_name_english = ?, native_place = ?, current_place = ?, title = ?, info = ?, image_path = ?, logo_path = ?, icon_path = ?, description = ?, history = ?, status = ?
+            SET community_id = ?, sub_community_id = ?, kula_id = ?, kula_deivam_id = ?, our_gen_name_tamil = ?, our_gen_name_english = ?, ancestor_gen_name_tamil = ?, ancestor_gen_name_english = ?, vagaiyara_name_tamil = ?, vagaiyara_name_english = ?, native_place = ?, current_place = ?, title = ?, info = ?, image_path = ?, logo_path = ?, icon_path = ?, description = ?, history = ?, status = ?
             WHERE id = ?
           `;
           await client.query(updateQuery, [
             value.community_id,
             value.sub_community_id,
             value.kula_id,
-            value.vagaiyara_name_tamil,
-            value.vagaiyara_name_english || null,
+            value.kula_deivam_id || null,
+            value.our_gen_name_tamil,
+            value.our_gen_name_english || null,
+            value.ancestor_gen_name_tamil,
+            value.ancestor_gen_name_english || null,
+            value.our_gen_name_tamil, // Maintain compatibility
+            value.our_gen_name_english || value.our_gen_name_tamil, // Maintain compatibility
             value.native_place || null,
             value.current_place || null,
             value.title || null,

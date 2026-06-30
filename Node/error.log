@@ -637,3 +637,19 @@
 {"error":{"status":404},"level":"error","message":"Not Found","method":"GET","timestamp":"2026-06-26T05:43:00.658Z","url":"/kula-deivams"}
 {"error":{"status":404},"level":"error","message":"Not Found","method":"GET","timestamp":"2026-06-26T05:43:36.165Z","url":"/temple_basic_detail/1"}
 {"error":{"status":404},"level":"error","message":"Not Found","method":"GET","timestamp":"2026-06-26T05:44:48.953Z","url":"/temple_basic_detail/1"}
+{"error":{"status":404},"level":"error","message":"Not Found","method":"POST","timestamp":"2026-06-29T09:58:10.917Z","url":"/user/create"}
+{"error":"Access denied for user 'root'@'localhost' (using password: NO)","level":"error","message":"Database connection error","timestamp":"2026-06-29T14:46:21.311Z"}
+{"error":{"status":404},"level":"error","message":"Not Found","method":"GET","timestamp":"2026-06-30T08:52:33.620Z","url":"/uploads/1782793388383_furniture_category.png"}
+{"error":{"status":404},"level":"error","message":"Not Found","method":"GET","timestamp":"2026-06-30T08:52:33.717Z","url":"/favicon.ico"}
+{"error":{"status":404},"level":"error","message":"Not Found","method":"GET","timestamp":"2026-06-30T08:53:02.131Z","url":"/uploads/1782793388383_furniture_category.png"}
+{"error":{"status":404},"level":"error","message":"Not Found","method":"GET","timestamp":"2026-06-30T08:53:39.776Z","url":"/uploads/1782793388383_furniture_category.png"}
+{"error":{"status":404},"level":"error","message":"Not Found","method":"GET","timestamp":"2026-06-30T08:53:40.414Z","url":"/uploads/1782793388383_furniture_category.png"}
+{"error":{"status":404},"level":"error","message":"Not Found","method":"GET","timestamp":"2026-06-30T08:53:40.651Z","url":"/uploads/1782793388383_furniture_category.png"}
+{"error":{"status":404},"level":"error","message":"Not Found","method":"GET","timestamp":"2026-06-30T08:53:40.836Z","url":"/uploads/1782793388383_furniture_category.png"}
+{"error":{"status":404},"level":"error","message":"Not Found","method":"GET","timestamp":"2026-06-30T08:53:41.080Z","url":"/uploads/1782793388383_furniture_category.png"}
+{"error":{"status":404},"level":"error","message":"Not Found","method":"GET","timestamp":"2026-06-30T08:53:41.252Z","url":"/uploads/1782793388383_furniture_category.png"}
+{"error":{"status":404},"level":"error","message":"Not Found","method":"GET","timestamp":"2026-06-30T08:53:41.463Z","url":"/uploads/1782793388383_furniture_category.png"}
+{"error":{"status":404},"level":"error","message":"Not Found","method":"GET","timestamp":"2026-06-30T08:53:41.663Z","url":"/uploads/1782793388383_furniture_category.png"}
+{"error":{"status":404},"level":"error","message":"Not Found","method":"GET","timestamp":"2026-06-30T08:53:41.851Z","url":"/uploads/1782793388383_furniture_category.png"}
+{"error":{"status":404},"level":"error","message":"Not Found","method":"GET","timestamp":"2026-06-30T08:53:42.052Z","url":"/uploads/1782793388383_furniture_category.png"}
+{"error":{"status":404},"level":"error","message":"Not Found","method":"GET","timestamp":"2026-06-30T08:53:42.244Z","url":"/uploads/1782793388383_furniture_category.png"}

@@ -258,8 +258,8 @@ const CommunitySelect = () => {
             community_id: String(v.community_id),
             sub_community_id: String(v.sub_community_id),
             kula_id: String(v.kula_id),
-            name_ta: v.vagaiyara_name_tamil || '',
-            name_en: v.vagaiyara_name_english || '',
+            name_ta: v.our_gen_name_tamil || v.vagaiyara_name_tamil || '',
+            name_en: v.our_gen_name_english || v.vagaiyara_name_english || '',
             sontha_uru: v.native_place || '',
             epo_uru: v.current_place || ''
           }));
@@ -372,8 +372,10 @@ const CommunitySelect = () => {
       community_id: Number(selectedCommunityId),
       sub_community_id: Number(selectedSubCommunityId),
       kula_id: Number(kula_id),
-      vagaiyara_name_tamil: newVagaiyaraTa.trim(),
-      vagaiyara_name_english: newVagaiyaraEn.trim(),
+      our_gen_name_tamil: newVagaiyaraTa.trim(),
+      our_gen_name_english: newVagaiyaraEn.trim(),
+      ancestor_gen_name_tamil: newVagaiyaraTa.trim(),
+      ancestor_gen_name_english: newVagaiyaraEn.trim(),
       native_place: newVagaiyaraSonthaUru.trim(),
       current_place: newVagaiyaraEpoUru.trim(),
       status: 'active'

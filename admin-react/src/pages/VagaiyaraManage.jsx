@@ -3,12 +3,6 @@ import React, { useState, useEffect } from 'react';
 import { Users, Plus, Trash2, Edit, Camera, XCircle, FileText, Info as InfoIcon, Save, RefreshCw, Bookmark, MapPin } from 'lucide-react';
 import { showSuccess, showError, showWarning, showConfirm } from '../utils/swal';
 
-const INITIAL_VAGAIYARAS = [
-  { id: 'v1', community_id: '1', sub_community_id: '1', kula_id: 'k1', name_ta: 'முத்தையா வகைரா', name_en: 'Muthaiya Vagaiyara', sontha_uru: 'பல்லடம் (Palladam)', epo_uru: 'கோயம்புத்தூர் (Coimbatore)', title: 'முத்தையா வகைரா வம்சம்', info: 'Kongu Vellalar Vagaiyara', description: 'Traditional family line', image: '', logo: '', icon: '', varalaru: 'Historically located in Palladam region.' },
-  { id: 'v2', community_id: '1', sub_community_id: '1', kula_id: 'k2', name_ta: 'சின்னசாமி வகைரா', name_en: 'Chinnasamy Vagaiyara', sontha_uru: 'திருச்செங்கோடு (Tiruchengode)', epo_uru: 'ஈரோடு (Erode)', title: 'சின்னசாமி வகைரா வம்சம்', info: 'Kongu Vellalar Vagaiyara', description: 'Traditional family line', image: '', logo: '', icon: '', varalaru: 'Historically located in Tiruchengode region.' },
-  { id: 'v3', community_id: '2', sub_community_id: 's4', kula_id: 'k3', name_ta: 'அண்ணாமலை வகைரா', name_en: 'Annamalai Vagaiyara', sontha_uru: 'விருத்தாசலம் (Vriddhachalam)', epo_uru: 'கடலூர் (Cuddalore)', title: 'அண்ணாமலை வகைரா வம்சம்', info: 'Vanniyar Vagaiyara', description: 'Traditional family line', image: '', logo: '', icon: '', varalaru: 'Historically located in Vriddhachalam region.' }
-];
-
 const resolveImageUrl = (img) => {
   if (!img) return '';
   if (img.startsWith('data:image/') || img.startsWith('http://') || img.startsWith('https://')) {
@@ -21,18 +15,19 @@ const VagaiyaraManage = () => {
   const [communities, setCommunities] = useState([]);
   const [subCommunities, setSubCommunities] = useState([]);
   const [kulams, setKulams] = useState([]);
-  const [vagaiyaras, setVagaiyaras] = useState(() => {
-    const saved = localStorage.getItem('local_vagaiyaras');
-    return saved ? JSON.parse(saved) : INITIAL_VAGAIYARAS;
-  });
+  const [kulaDeivams, setKulaDeivams] = useState([]);
+  const [vagaiyaras, setVagaiyaras] = useState([]);
 
   const [formData, setFormData] = useState({
     id: '',
     community_id: '',
     sub_community_id: '',
     kula_id: '',
-    name_ta: '',
-    name_en: '',
+    kula_deivam_id: '',
+    our_gen_name_tamil: '',
+    our_gen_name_english: '',
+    ancestor_gen_name_tamil: '',
+    ancestor_gen_name_english: '',
     sontha_uru: '',
     epo_uru: '',
     title: '',
@@ -122,15 +117,75 @@ const VagaiyaraManage = () => {
     }
   };
 
+  const fetchKulaDeivams = async () => {
+    try {
+      const response = await fetch(BASE_API + '/kula-deivams');
+      const result = await response.json();
+      if (response.ok && result.data && result.data.code === 200) {
+        const mapped = result.data.data.map(kd => ({
+          id: String(kd.id),
+          kula_id: String(kd.kula_id),
+          name_ta: kd.deity_name_tamil || '',
+          name_en: kd.deity_name_english || ''
+        }));
+        setKulaDeivams(mapped);
+        localStorage.setItem('local_kula_deivams', JSON.stringify(mapped));
+      } else {
+        const saved = localStorage.getItem('local_kula_deivams');
+        if (saved) setKulaDeivams(JSON.parse(saved));
+      }
+    } catch (e) {
+      console.error("Error fetching kula deivams:", e);
+      const saved = localStorage.getItem('local_kula_deivams');
+      if (saved) setKulaDeivams(JSON.parse(saved));
+    }
+  };
+
+  const fetchVagaiyaras = async () => {
+    try {
+      const response = await fetch(BASE_API + '/vagaiyaras');
+      const result = await response.json();
+      if (response.ok && result.data && result.data.code === 200) {
+        const mapped = result.data.data.map(v => ({
+          id: String(v.id),
+          community_id: String(v.community_id),
+          sub_community_id: String(v.sub_community_id),
+          kula_id: String(v.kula_id),
+          kula_deivam_id: v.kula_deivam_id ? String(v.kula_deivam_id) : '',
+          our_gen_name_tamil: v.our_gen_name_tamil || '',
+          our_gen_name_english: v.our_gen_name_english || '',
+          ancestor_gen_name_tamil: v.ancestor_gen_name_tamil || '',
+          ancestor_gen_name_english: v.ancestor_gen_name_english || '',
+          sontha_uru: v.native_place || '',
+          epo_uru: v.current_place || '',
+          title: v.title || '',
+          info: v.info || '',
+          description: v.description || '',
+          image: v.image_path || '',
+          logo: v.logo_path || '',
+          icon: v.icon_path || '',
+          varalaru: v.history || ''
+        }));
+        setVagaiyaras(mapped);
+        localStorage.setItem('local_vagaiyaras', JSON.stringify(mapped));
+      } else {
+        const saved = localStorage.getItem('local_vagaiyaras');
+        if (saved) setVagaiyaras(JSON.parse(saved));
+      }
+    } catch (e) {
+      console.error("Error fetching vagaiyaras:", e);
+      const saved = localStorage.getItem('local_vagaiyaras');
+      if (saved) setVagaiyaras(JSON.parse(saved));
+    }
+  };
+
   useEffect(() => {
     fetchCommunities();
     fetchSubCommunities();
     fetchKulams();
+    fetchKulaDeivams();
+    fetchVagaiyaras();
   }, []);
-
-  useEffect(() => {
-    localStorage.setItem('local_vagaiyaras', JSON.stringify(vagaiyaras));
-  }, [vagaiyaras]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -176,8 +231,11 @@ const VagaiyaraManage = () => {
       community_id: '',
       sub_community_id: '',
       kula_id: '',
-      name_ta: '',
-      name_en: '',
+      kula_deivam_id: '',
+      our_gen_name_tamil: '',
+      our_gen_name_english: '',
+      ancestor_gen_name_tamil: '',
+      ancestor_gen_name_english: '',
       sontha_uru: '',
       epo_uru: '',
       title: '',
@@ -219,13 +277,25 @@ const VagaiyaraManage = () => {
       'இந்த வகைராவை நீக்க விரும்புகிறீர்களா? (Delete this Vagaiyara?)'
     );
     if (confirm.isConfirmed) {
-      setVagaiyaras(prev => prev.filter(v => v.id !== id));
-      showSuccess('வெற்றி', 'வகைரா நீக்கப்பட்டது (Vagaiyara deleted successfully)');
-      resetForm();
+      try {
+        const response = await fetch(`${BASE_API}/vagaiyara/delete/${id}`, {
+          method: 'DELETE'
+        });
+        if (response.ok) {
+          showSuccess('வெற்றி', 'வகைரா நீக்கப்பட்டது (Vagaiyara deleted successfully)');
+          fetchVagaiyaras();
+          resetForm();
+        } else {
+          showError('பிழை', 'வகைராவை நீக்க முடியவில்லை');
+        }
+      } catch (err) {
+        console.error(err);
+        showError('பிழை', 'சர்வர் தொடர்பு கொள்ள முடியவில்லை');
+      }
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (!formData.community_id) {
@@ -233,35 +303,66 @@ const VagaiyaraManage = () => {
       return;
     }
 
-    if (!formData.name_ta.trim() || !formData.name_en.trim()) {
-      showWarning('விவரம் தேவை', 'வகைராவின் பெயரை உள்ளிடவும் (Please fill Vagaiyara name)');
+    if (!formData.our_gen_name_tamil.trim() || !formData.ancestor_gen_name_tamil.trim()) {
+      showWarning('விவரம் தேவை', 'தயவுசெய்து அனைத்து கட்டாய புலங்களையும் நிரப்பவும் (Please fill all required fields)');
       return;
     }
 
     const payload = {
-      id: isEditing ? formData.id : `v_${Date.now()}`,
-      community_id: formData.community_id,
-      sub_community_id: formData.sub_community_id,
-      kula_id: formData.kula_id,
-      name_ta: formData.name_ta.trim(),
-      name_en: formData.name_en.trim(),
-      sontha_uru: formData.sontha_uru.trim(),
-      epo_uru: formData.epo_uru.trim(),
+      community_id: Number(formData.community_id),
+      sub_community_id: Number(formData.sub_community_id) || 0,
+      kula_id: Number(formData.kula_id),
+      kula_deivam_id: formData.kula_deivam_id ? Number(formData.kula_deivam_id) : null,
+      our_gen_name_tamil: formData.our_gen_name_tamil.trim(),
+      our_gen_name_english: formData.our_gen_name_english.trim(),
+      ancestor_gen_name_tamil: formData.ancestor_gen_name_tamil.trim(),
+      ancestor_gen_name_english: formData.ancestor_gen_name_english.trim(),
+      native_place: formData.sontha_uru.trim(),
+      current_place: formData.epo_uru.trim(),
       title: formData.title.trim(),
       info: formData.info.trim(),
       description: formData.description.trim(),
-      varalaru: formData.varalaru.trim(),
-      image: formData.image,
-      logo: formData.logo,
-      icon: formData.icon
+      history: formData.varalaru.trim(),
+      image_path: formData.image,
+      logo_path: formData.logo,
+      icon_path: formData.icon
     };
 
-    if (isEditing) {
-      setVagaiyaras(prev => prev.map(v => v.id === formData.id ? payload : v));
-      showSuccess('வெற்றி', 'வகைரா புதுப்பிக்கப்பட்டது (Vagaiyara updated successfully)');
-    } else {
-      setVagaiyaras(prev => [...prev, payload]);
-      showSuccess('வெற்றி', 'புதிய வகைரா சேர்க்கப்பட்டது (New Vagaiyara added successfully)');
+    try {
+      if (isEditing) {
+        const response = await fetch(`${BASE_API}/vagaiyara/update/${formData.id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ ...payload, id: Number(formData.id) })
+        });
+        const result = await response.json();
+        if (response.ok) {
+          showSuccess('வெற்றி', 'வகைரா புதுப்பிக்கப்பட்டது (Vagaiyara updated successfully)');
+          fetchVagaiyaras();
+        } else {
+          showError('பிழை', result.message || 'வகைராவை புதுப்பிக்க முடியவில்லை');
+        }
+      } else {
+        const response = await fetch(`${BASE_API}/vagaiyara/create`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(payload)
+        });
+        const result = await response.json();
+        if (response.ok) {
+          showSuccess('வெற்றி', 'புதிய வகைரா சேர்க்கப்பட்டது (New Vagaiyara added successfully)');
+          fetchVagaiyaras();
+        } else {
+          showError('பிழை', result.message || 'வகைராவைச் சேர்க்க முடியவில்லை');
+        }
+      }
+    } catch (err) {
+      console.error(err);
+      showError('பிழை', 'சர்வர் தொடர்பு கொள்ள முடியவில்லை');
     }
 
     resetForm();
@@ -303,7 +404,7 @@ const VagaiyaraManage = () => {
                 const parent = communities.find(c => c.id === v.community_id);
                 const parentName = parent ? ` - ${parent.name_ta}` : '';
                 return (
-                  <option key={v.id} value={v.id}>{v.name_ta} ({v.name_en}){parentName}</option>
+                  <option key={v.id} value={v.id}>{v.our_gen_name_tamil} ({v.our_gen_name_english || ''}){parentName}</option>
                 );
               })}
             </select>
@@ -342,7 +443,8 @@ const VagaiyaraManage = () => {
                   ...prev,
                   community_id: val,
                   sub_community_id: '',
-                  kula_id: ''
+                  kula_id: '',
+                  kula_deivam_id: ''
                 }));
               }}
               required
@@ -355,7 +457,7 @@ const VagaiyaraManage = () => {
             </select>
           </div>
 
-          <div className="form-grid" style={{ gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+          <div className="form-grid" style={{ gridTemplateColumns: '1fr 1fr 1fr', gap: '16px' }}>
             <div className="form-group">
               <label className="form-label" style={{ fontWeight: '700', fontSize: '13px', color: '#334155' }}>
                 உட்பிரிவு (Select Sub-Community) <span style={{ color: '#ef4444' }}>*</span>
@@ -371,7 +473,8 @@ const VagaiyaraManage = () => {
                   setFormData(prev => ({
                     ...prev,
                     sub_community_id: val,
-                    kula_id: ''
+                    kula_id: '',
+                    kula_deivam_id: ''
                   }));
                 }}
                 style={{ height: '40px', borderRadius: '8px', border: '1.5px solid #cbd5e1', appearance: 'auto', paddingLeft: '12px', fontSize: '13px' }}
@@ -395,7 +498,14 @@ const VagaiyaraManage = () => {
                 value={formData.kula_id}
                 disabled={!formData.community_id}
                 required
-                onChange={(e) => setFormData(prev => ({ ...prev, kula_id: e.target.value }))}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setFormData(prev => ({
+                    ...prev,
+                    kula_id: val,
+                    kula_deivam_id: ''
+                  }));
+                }}
                 style={{ height: '40px', borderRadius: '8px', border: '1.5px solid #cbd5e1', appearance: 'auto', paddingLeft: '12px', fontSize: '13px' }}
               >
                 <option value="">-- குலம் தேர்ந்தெடுக்கவும் (Select Kulam) --</option>
@@ -410,41 +520,104 @@ const VagaiyaraManage = () => {
                   ))}
               </select>
             </div>
-          </div>
-
-          <div className="form-grid" style={{ gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-            <div className="form-group">
-              <label className="form-label" style={{ fontWeight: '700', fontSize: '13px', color: '#334155' }}>
-                வகைராவின் பெயர் (தமிழ்) <span style={{ color: '#ef4444' }}>*</span>
-              </label>
-              <input
-                type="text"
-                name="name_ta"
-                className="form-control"
-                placeholder="எ.கா. முத்தையா வகைரா"
-                value={formData.name_ta}
-                onChange={handleInputChange}
-                required
-                style={{ height: '40px', borderRadius: '8px', border: '1.5px solid #cbd5e1', paddingLeft: '12px', fontSize: '13px' }}
-              />
-            </div>
 
             <div className="form-group">
               <label className="form-label" style={{ fontWeight: '700', fontSize: '13px', color: '#334155' }}>
-                Vagaiyara Name (English) <span style={{ color: '#ef4444' }}>*</span>
+                குலதெய்வம் (Select Kula Deivam) <span style={{ color: '#ef4444' }}>*</span>
               </label>
-              <input
-                type="text"
-                name="name_en"
+              <select
+                name="kula_deivam_id"
                 className="form-control"
-                placeholder="e.g. Muthaiya Vagaiyara"
-                value={formData.name_en}
+                value={formData.kula_deivam_id}
+                disabled={!formData.kula_id}
                 onChange={handleInputChange}
                 required
-                style={{ height: '40px', borderRadius: '8px', border: '1.5px solid #cbd5e1', paddingLeft: '12px', fontSize: '13px' }}
-              />
+                style={{ height: '40px', borderRadius: '8px', border: '1.5px solid #cbd5e1', appearance: 'auto', paddingLeft: '12px', fontSize: '13px' }}
+              >
+                <option value="">-- குலதெய்வம் தேர்ந்தெடுக்கவும் (Select Kula Deivam) --</option>
+                {kulaDeivams
+                  .filter(kd => String(kd.kula_id) === String(formData.kula_id))
+                  .map(kd => (
+                    <option key={kd.id} value={kd.id}>{kd.name_ta} ({kd.name_en})</option>
+                  ))}
+              </select>
             </div>
           </div>
+
+          {/* Conditional Generation-specific fields display */}
+          {formData.kula_deivam_id ? (
+            <>
+              <div className="form-grid" style={{ gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                <div className="form-group">
+                  <label className="form-label" style={{ fontWeight: '700', fontSize: '13px', color: '#334155' }}>
+                    எங்களது தலைமுறை வகைரா (Our Generation Vagaiyara - தமிழ்) <span style={{ color: '#ef4444' }}>*</span>
+                  </label>
+                  <input
+                    type="text"
+                    name="our_gen_name_tamil"
+                    className="form-control"
+                    placeholder="எ.கா. முத்தையா வகைரா"
+                    value={formData.our_gen_name_tamil}
+                    onChange={handleInputChange}
+                    required
+                    style={{ height: '40px', borderRadius: '8px', border: '1.5px solid #cbd5e1', paddingLeft: '12px', fontSize: '13px' }}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label" style={{ fontWeight: '700', fontSize: '13px', color: '#334155' }}>
+                    Our Generation Vagaiyara (English)
+                  </label>
+                  <input
+                    type="text"
+                    name="our_gen_name_english"
+                    className="form-control"
+                    placeholder="e.g. Muthaiya Vagaiyara"
+                    value={formData.our_gen_name_english}
+                    onChange={handleInputChange}
+                    style={{ height: '40px', borderRadius: '8px', border: '1.5px solid #cbd5e1', paddingLeft: '12px', fontSize: '13px' }}
+                  />
+                </div>
+              </div>
+
+              <div className="form-grid" style={{ gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                <div className="form-group">
+                  <label className="form-label" style={{ fontWeight: '700', fontSize: '13px', color: '#334155' }}>
+                    முன்னோர் தலைமுறை வகைரா (Ancestor Generation Vagaiyara - தமிழ்) <span style={{ color: '#ef4444' }}>*</span>
+                  </label>
+                  <input
+                    type="text"
+                    name="ancestor_gen_name_tamil"
+                    className="form-control"
+                    placeholder="எ.கா. சின்னசாமி வகைரா"
+                    value={formData.ancestor_gen_name_tamil}
+                    onChange={handleInputChange}
+                    required
+                    style={{ height: '40px', borderRadius: '8px', border: '1.5px solid #cbd5e1', paddingLeft: '12px', fontSize: '13px' }}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label" style={{ fontWeight: '700', fontSize: '13px', color: '#334155' }}>
+                    Ancestor Generation Vagaiyara (English)
+                  </label>
+                  <input
+                    type="text"
+                    name="ancestor_gen_name_english"
+                    className="form-control"
+                    placeholder="e.g. Chinnasamy Vagaiyara"
+                    value={formData.ancestor_gen_name_english}
+                    onChange={handleInputChange}
+                    style={{ height: '40px', borderRadius: '8px', border: '1.5px solid #cbd5e1', paddingLeft: '12px', fontSize: '13px' }}
+                  />
+                </div>
+              </div>
+            </>
+          ) : (
+            <div style={{ padding: '16px', background: '#f8fafc', borderRadius: '8px', border: '1.5px dashed #cbd5e1', textAlign: 'center', fontSize: '13px', color: '#64748b' }}>
+              வகைரா பெயரை உள்ளிட முதலில் குலதெய்வத்தை தேர்ந்தெடுக்கவும் (Please select Kula Deivam first to enter Vagaiyara details)
+            </div>
+          )}
 
           <div className="form-grid" style={{ gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
             <div className="form-group">
