@@ -154,7 +154,6 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
       icon: UserCheck,
       submenus: [
         {title: 'நேர்த்தி கடன்', link: '/nertti_katan'},
-        {title: 'குலம் மக்கள்', link: '/kullam_people'},
         {title: 'சமூகம் மற்றும் சாதி', link: '/community'},
         {title: 'கட்டளை தரங்கள்', link: '/kattali'},
       ]
@@ -169,6 +168,8 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
         {title: 'குலம்', link: '/kulam-manage'},
         {title: 'குல தெய்வம்', link: '/kula-deivam'},
         {title: 'வகைரா', link: '/vagaiyara-manage'},
+        {title: 'குலம் மக்கள்', link: '/kullam_people'},
+        {title: 'முன்னோர்களைச் சேர்க்க', link: '/ancestors'},
       ]
     },
     { 

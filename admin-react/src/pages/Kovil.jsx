@@ -20,13 +20,14 @@ import {
   X,
   Plus,
   Camera,
-  Users
+  Users,
+  ChevronDown
 } from 'lucide-react';
 import Swal, { showSuccess, showError } from '../utils/swal';
 
-const FormInput = ({ label, name, value, onChange, icon: Icon, placeholder, readOnly = false, required = false }) => (
+const FormInput = ({ label, name, value, onChange, icon: Icon, placeholder, readOnly = false, required = false, labelStyle }) => (
   <div className="form-group">
-    <label className="form-label">{label}</label>
+    <label className="form-label" style={labelStyle}>{label}</label>
     <div className="input-wrapper">
       {Icon && <Icon className="input-icon" size={18} />}
       <input
@@ -82,9 +83,9 @@ const FormSelect = ({ label, name, value, onChange, icon: Icon, options }) => (
   </div>
 );
 
-const FormSelectObj = ({ label, name, value, onChange, icon: Icon, options, placeholder, disabled = false }) => (
+const FormSelectObj = ({ label, name, value, onChange, icon: Icon, options, placeholder, disabled = false, labelStyle }) => (
   <div className="form-group">
-    <label className="form-label">{label}</label>
+    <label className="form-label" style={labelStyle}>{label}</label>
     <div className="input-wrapper">
       {Icon && <Icon className="input-icon" size={18} />}
       <select
@@ -517,6 +518,7 @@ const Kovil = () => {
 
   const [loading, setLoading] = useState(false);
   const [activeStep, setActiveStep] = useState(1);
+  const [showAddDropdown, setShowAddDropdown] = useState(false);
 
   const [communities, setCommunities] = useState([]);
   const [subCommunities, setSubCommunities] = useState([]);
@@ -850,7 +852,8 @@ const Kovil = () => {
     { number: 1, title: 'அடிப்படை விவரங்கள்', subtitle: 'Basic Details' },
     { number: 2, title: 'தெய்வங்கள்', subtitle: 'Deities' },
     { number: 3, title: 'வரலாறு & பாடல்கள்', subtitle: 'History & Songs' },
-    { number: 4, title: 'சமூகம் & குலதெய்வம்', subtitle: 'Community & Deity' }
+    { number: 4, title: 'சமூகம் & குலதெய்வம்', subtitle: 'Community & Deity' },
+    { number: 5, title: 'வகைரா & குடும்ப விவரங்கள்', subtitle: 'Vagaiyara & Family' }
   ];
 
   return (
@@ -864,7 +867,18 @@ const Kovil = () => {
       </div>
 
       {/* Step Indicators */}
-      <div style={{ display: 'flex', gap: '16px', marginBottom: '24px', flexWrap: 'wrap' }}>
+      <div style={{ 
+        display: 'flex', 
+        gap: '8px', 
+        marginBottom: '24px', 
+        flexWrap: 'nowrap',
+        background: '#f8fafc',
+        padding: '8px',
+        borderRadius: '16px',
+        border: '1px solid #e2e8f0',
+        overflowX: 'auto',
+        scrollbarWidth: 'none'
+      }}>
         {STEPS.map(step => {
           const isActive = activeStep === step.number;
           const isCompleted = activeStep > step.number;
@@ -873,36 +887,61 @@ const Kovil = () => {
               key={step.number}
               onClick={() => setActiveStep(step.number)}
               style={{
-                flex: 1,
-                minWidth: '150px',
-                padding: '12px 16px',
+                flex: '1 1 0px',
+                minWidth: '120px',
+                padding: '10px 12px',
                 borderRadius: '12px',
-                border: `1.5px solid ${isActive ? '#6366f1' : '#e2e8f0'}`,
-                background: isActive ? '#f5f3ff' : '#ffffff',
+                border: '1px solid',
+                borderColor: isActive ? '#6366f1' : isCompleted ? '#bbf7d0' : 'transparent',
+                background: isActive ? '#ffffff' : isCompleted ? '#f0fdf4' : 'transparent',
                 cursor: 'pointer',
-                transition: 'all 0.2s',
-                boxShadow: isActive ? '0 4px 12px rgba(99, 102, 241, 0.08)' : 'none'
+                transition: 'all 0.25s ease',
+                boxShadow: isActive ? '0 4px 10px rgba(99, 102, 241, 0.06)' : 'none',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                userSelect: 'none'
               }}
             >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <div style={{
-                  width: '24px',
-                  height: '24px',
-                  borderRadius: '50%',
-                  background: isActive ? '#6366f1' : isCompleted ? '#10b981' : '#cbd5e1',
-                  color: '#ffffff',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '12px',
-                  fontWeight: '700'
-                }}>
-                  {isCompleted ? '✓' : step.number}
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column' }}>
-                  <span style={{ fontSize: '13px', fontWeight: '700', color: isActive ? '#4f46e5' : '#1e293b' }}>{step.title}</span>
-                  <span style={{ fontSize: '11px', color: '#64748b' }}>{step.subtitle}</span>
-                </div>
+              <div style={{
+                width: '28px',
+                height: '28px',
+                borderRadius: '50%',
+                background: isActive ? '#6366f1' : isCompleted ? '#10b981' : '#cbd5e1',
+                color: '#ffffff',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '13px',
+                fontWeight: '700',
+                flexShrink: 0,
+                transition: 'all 0.2s',
+                boxShadow: isActive ? '0 0 0 4px rgba(99, 102, 241, 0.15)' : 'none'
+              }}>
+                {isCompleted ? '✓' : step.number}
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+                <span style={{ 
+                  fontSize: '12.5px', 
+                  fontWeight: '700', 
+                  color: isActive ? '#4f46e5' : isCompleted ? '#166534' : '#475569',
+                  lineHeight: '1.3',
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis'
+                }} title={step.title}>
+                  {step.title}
+                </span>
+                <span style={{ 
+                  fontSize: '10px', 
+                  color: isActive ? '#818cf8' : isCompleted ? '#15803d' : '#94a3b8',
+                  lineHeight: '1.2',
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis'
+                }} title={step.subtitle}>
+                  {step.subtitle}
+                </span>
               </div>
             </div>
           );
@@ -1232,46 +1271,34 @@ const Kovil = () => {
               />
 
               {/* Deity List selection section */}
-              <div className="form-group" style={{ gridColumn: 'span 3', background: '#f8fafc', padding: '20px', borderRadius: '12px', border: '1px solid #e2e8f0', marginTop: '10px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                  <label className="form-label" style={{ fontWeight: '750', fontSize: '13.5px', color: '#1e293b', margin: 0, display: 'block' }}>
-                    குல தெய்வம் பட்டியல் (Kula Deivam List) *
+              <div className="form-group" style={{ gridColumn: 'span 3', background: '#f8fafc', padding: '24px', borderRadius: '16px', border: '1px solid #e2e8f0', marginTop: '15px', boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.01)' }}>
+                <div style={{ marginBottom: '12px' }}>
+                  <label className="form-label" style={{ fontWeight: '800', fontSize: '15px', color: '#1e293b', margin: 0, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <Sparkles size={18} color="#6366f1" /> குல தெய்வம் பட்டியல் (Kula Deivam List) *
                   </label>
-                  {formData.kula_id && (
-                    <Link
-                      to="/kullam_people"
-                      className="btn btn-outline"
-                      style={{
-                        padding: '6px 12px',
-                        fontSize: '12px',
-                        fontWeight: '600',
-                        borderColor: '#6366f1',
-                        color: '#6366f1',
-                        background: 'transparent',
-                        borderRadius: '10px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '6px',
-                        height: '32px',
-                        textDecoration: 'none'
-                      }}
-                    >
-                      <Plus size={14} /> குல மக்கள் சேர்க்க (Add Kula People)
-                    </Link>
-                  )}
+                  <p style={{ margin: '4px 0 0 0', fontSize: '11.5px', color: '#64748b' }}>தங்கள் உட்பிரிவிற்குரிய குல தெய்வத்தை தேர்வு செய்யவும். (Select your Kula Deivam)</p>
                 </div>
-                <p style={{ margin: '0 0 14px 0', fontSize: '11px', color: '#64748b' }}>தங்கள் உட்பிரிவிற்குரிய குல தெய்வத்தை தேர்வு செய்யவும்.</p>
 
                 {!formData.kula_id ? (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '24px', background: '#fff', border: '1.5px dashed #cbd5e1', borderRadius: '10px', color: '#64748b', fontSize: '12.5px', justifyContent: 'center' }}>
-                    குலம் தேர்ந்தெடுத்தவுடன் குலதெய்வம் பட்டியல் காட்டப்படும். (Please select Kulam first)
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', padding: '32px 24px', background: '#fff', border: '2px dashed #cbd5e1', borderRadius: '12px', color: '#64748b', fontSize: '13px', justifyContent: 'center', textAlign: 'center' }}>
+                    <Bookmark size={24} color="#94a3b8" />
+                    <span>குலம் தேர்ந்தெடுத்தவுடன் குலதெய்வம் பட்டியல் காட்டப்படும். (Please select Kulam first)</span>
                   </div>
                 ) : availableKulaDeivams.length === 0 ? (
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', padding: '24px', background: '#fff', border: '1.5px dashed #cbd5e1', borderRadius: '10px', color: '#64748b', fontSize: '12.5px', textAlign: 'center' }}>
-                    <span>தற்போது குல தெய்வங்கள் எதுவும் இல்லை.</span>
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', padding: '32px 24px', background: '#fff', border: '2px dashed #cbd5e1', borderRadius: '12px', color: '#64748b', fontSize: '13px', textAlign: 'center' }}>
+                    <Info size={24} color="#94a3b8" />
+                    <span>தற்போது குல தெய்வங்கள் எதுவும் இல்லை. (No deities available for the selected options)</span>
                   </div>
                 ) : (
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '12px', maxHeight: '200px', overflowY: 'auto', paddingRight: '4px' }}>
+                  <div style={{ 
+                    display: 'grid', 
+                    gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', 
+                    gap: '16px', 
+                    maxHeight: '260px', 
+                    overflowY: 'auto', 
+                    padding: '4px',
+                    scrollbarWidth: 'thin'
+                  }}>
                     {availableKulaDeivams.map(kd => {
                       const isSelected = String(kd.id) === String(formData.kula_deivam_id);
                       return (
@@ -1284,41 +1311,85 @@ const Kovil = () => {
                             }));
                           }}
                           style={{
-                            padding: '10px 14px',
-                            borderRadius: '12px',
-                            border: `2px solid ${isSelected ? '#4f46e5' : '#e2e8f0'}`,
-                            background: isSelected ? '#eef2ff' : '#ffffff',
+                            position: 'relative',
+                            padding: '12px 16px',
+                            borderRadius: '14px',
+                            border: '2px solid',
+                            borderColor: isSelected ? '#6366f1' : '#e2e8f0',
+                            background: isSelected ? '#f5f3ff' : '#ffffff',
                             cursor: 'pointer',
                             display: 'flex',
                             alignItems: 'center',
-                            gap: '12px',
-                            transition: 'all 0.2s ease',
-                            boxShadow: isSelected ? '0 4px 12px rgba(79, 70, 229, 0.12)' : '0 2px 4px rgba(0,0,0,0.02)'
+                            gap: '14px',
+                            transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
+                            boxShadow: isSelected ? '0 4px 12px rgba(99, 102, 241, 0.12)' : '0 2px 4px rgba(0,0,0,0.02)',
+                            userSelect: 'none',
+                            transform: isSelected ? 'scale(1.02)' : 'scale(1)'
                           }}
                         >
-                          <img
-                            src={getKulaDeivamImageUrl(kd)}
-                            alt={kd.name_en}
-                            onError={(e) => {
-                              e.target.src = BASE_API + '/files/default_god.svg';
-                              e.target.onerror = null;
-                            }}
-                            style={{
-                              width: '38px',
-                              height: '38px',
-                              borderRadius: '8px',
-                              objectFit: 'cover',
-                              border: '1.5px solid #e2e8f0',
-                              background: '#f8fafc',
-                              flexShrink: 0
-                            }}
-                          />
-                          <div style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
-                            <span style={{ fontSize: '13px', fontWeight: '700', color: isSelected ? '#1e1b4b' : '#334155' }}>{kd.name_ta}</span>
-                            <span style={{ fontSize: '11px', color: isSelected ? '#4f46e5' : '#64748b', marginTop: '2px' }}>{kd.name_en}</span>
+                          <div style={{ position: 'relative', flexShrink: 0 }}>
+                            <img
+                              src={getKulaDeivamImageUrl(kd)}
+                              alt={kd.name_en}
+                              onError={(e) => {
+                                e.target.src = BASE_API + '/files/default_god.svg';
+                                e.target.onerror = null;
+                              }}
+                              style={{
+                                width: '48px',
+                                height: '48px',
+                                borderRadius: '10px',
+                                objectFit: 'cover',
+                                border: '1.5px solid',
+                                borderColor: isSelected ? '#c7d2fe' : '#e2e8f0',
+                                background: '#f8fafc',
+                                transition: 'all 0.2s'
+                              }}
+                            />
                           </div>
+                          
+                          <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0 }}>
+                            <span style={{ 
+                              fontSize: '13.5px', 
+                              fontWeight: '700', 
+                              color: isSelected ? '#312e81' : '#1e293b',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap'
+                            }}>
+                              {kd.name_ta}
+                            </span>
+                            <span style={{ 
+                              fontSize: '11px', 
+                              color: isSelected ? '#6366f1' : '#64748b', 
+                              marginTop: '3px',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap'
+                            }}>
+                              {kd.name_en}
+                            </span>
+                          </div>
+
                           {isSelected && (
-                            <div style={{ width: '18px', height: '18px', borderRadius: '50%', backgroundColor: '#4f46e5', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', flexShrink: 0 }}>
+                            <div style={{
+                              position: 'absolute',
+                              top: '-8px',
+                              right: '-8px',
+                              width: '20px',
+                              height: '20px',
+                              borderRadius: '50%',
+                              backgroundColor: '#6366f1',
+                              color: '#fff',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              fontSize: '11px',
+                              fontWeight: '700',
+                              border: '2px solid #fff',
+                              boxShadow: '0 2px 4px rgba(99, 102, 241, 0.3)',
+                              zIndex: 10
+                            }}>
                               ✓
                             </div>
                           )}
@@ -1327,6 +1398,18 @@ const Kovil = () => {
                     })}
                   </div>
                 )}
+              </div>
+            </div>
+          )}
+
+          {activeStep === 5 && (
+            <div className="form-grid">
+              <div className="form-group" style={{ gridColumn: 'span 3', borderBottom: '2px solid #e2e8f0', marginBottom: '15px', paddingBottom: '15px' }}>
+                <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '800', color: '#1e293b', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Users size={22} color="#6366f1" />
+                  வகைரா மற்றும் குடும்ப விவரங்கள் (Vagaiyara & Family Details)
+                </h3>
+                <p style={{ margin: '4px 0 0 0', fontSize: '11.5px', color: '#64748b' }}>தங்கள் குடும்பத்தின் விபரங்களை இங்கே நிர்வகிக்கவும். (Manage your family details)</p>
               </div>
 
               <FormSelectObj
@@ -1344,6 +1427,7 @@ const Kovil = () => {
                 options={availableVagaiyaras}
                 placeholder="-- வகைரா தேர்ந்தெடுக்கவும் --"
                 disabled={!formData.community_id}
+                labelStyle={{ minHeight: '38px', display: 'flex', alignItems: 'flex-end', marginBottom: '8px' }}
               />
 
               <FormInput
@@ -1353,10 +1437,13 @@ const Kovil = () => {
                 onChange={handleChange}
                 icon={Building}
                 placeholder="தற்போதைய வகையராவை உள்ளிடவும்"
+                labelStyle={{ minHeight: '38px', display: 'flex', alignItems: 'flex-end', marginBottom: '8px' }}
               />
 
               <div className="form-group">
-                <label className="form-label">எந்த தலைமுறை (Select Generation)</label>
+                <label className="form-label" style={{ minHeight: '38px', display: 'flex', alignItems: 'flex-end', marginBottom: '8px' }}>
+                  எந்த தலைமுறை (Select Generation)
+                </label>
                 <div className="input-wrapper">
                   <Layers className="input-icon" size={18} />
                   <select
@@ -1365,7 +1452,7 @@ const Kovil = () => {
                     className="form-control"
                     value={formData.generation_no}
                     onChange={handleChange}
-                    style={{ paddingLeft: '42px', appearance: 'auto' }}
+                    style={{ paddingLeft: '42px', appearance: 'auto', background: '#fff' }}
                   >
                     <option value="">-- தலைமுறையை தேர்ந்தெடுக்கவும் --</option>
                     {GENERATIONS.map(g => (
@@ -1375,9 +1462,134 @@ const Kovil = () => {
                 </div>
               </div>
 
+              {formData.kula_id && formData.vagaiyara_id && (
+                <div style={{ gridColumn: 'span 3', position: 'relative', display: 'inline-block', width: 'fit-content', marginTop: '10px', marginBottom: '20px' }}>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setShowAddDropdown(prev => !prev);
+                    }}
+                    className="btn btn-outline"
+                    style={{
+                      padding: '8px 16px',
+                      fontSize: '13px',
+                      fontWeight: '700',
+                      borderColor: '#6366f1',
+                      color: '#6366f1',
+                      background: '#fff',
+                      borderRadius: '10px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      height: '38px',
+                      cursor: 'pointer',
+                      boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
+                      transition: 'all 0.2s'
+                    }}
+                  >
+                    <Plus size={16} /> சேர்க்க (Add) <ChevronDown size={14} style={{ transform: showAddDropdown ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }} />
+                  </button>
+
+                  {showAddDropdown && (
+                    <>
+                      <div 
+                        onClick={() => setShowAddDropdown(false)} 
+                        style={{
+                          position: 'fixed',
+                          top: 0,
+                          left: 0,
+                          right: 0,
+                          bottom: 0,
+                          zIndex: 998,
+                          background: 'transparent'
+                        }}
+                      />
+                      
+                      <div style={{
+                        position: 'absolute',
+                        top: '44px',
+                        left: 0,
+                        backgroundColor: '#ffffff',
+                        border: '1px solid #e2e8f0',
+                        borderRadius: '12px',
+                        boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
+                        zIndex: 999,
+                        minWidth: '240px',
+                        overflow: 'hidden',
+                        padding: '4px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '2px'
+                      }}>
+                        <Link
+                          to="/kullam_people"
+                          onClick={() => setShowAddDropdown(false)}
+                          style={{
+                            padding: '10px 14px',
+                            fontSize: '13px',
+                            fontWeight: '600',
+                            color: '#475569',
+                            textDecoration: 'none',
+                            borderRadius: '8px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            transition: 'all 0.2s',
+                            cursor: 'pointer',
+                            textAlign: 'left'
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.backgroundColor = '#f1f5f9';
+                            e.currentTarget.style.color = '#6366f1';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.backgroundColor = 'transparent';
+                            e.currentTarget.style.color = '#475569';
+                          }}
+                        >
+                          <Plus size={14} /> குல மக்கள் சேர்க்க (Add Kula People)
+                        </Link>
+                        <Link
+                          to="/ancestors"
+                          state={{ fromKovil: true, temple_details_id: existingDetailId || basicId }}
+                          onClick={() => setShowAddDropdown(false)}
+                          style={{
+                            padding: '10px 14px',
+                            fontSize: '13px',
+                            fontWeight: '600',
+                            color: '#475569',
+                            textDecoration: 'none',
+                            borderRadius: '8px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            transition: 'all 0.2s',
+                            cursor: 'pointer',
+                            textAlign: 'left'
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.backgroundColor = '#f1f5f9';
+                            e.currentTarget.style.color = '#10b981';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.backgroundColor = 'transparent';
+                            e.currentTarget.style.color = '#475569';
+                          }}
+                        >
+                          <Plus size={14} /> முன்னோர்கள் சேர்க்க (Add Ancestors)
+                        </Link>
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
+
               <div className="form-group">
-                <label className="form-label">திருமணம் நிலை (Select Marital Status)</label>
-                <div style={{ display: 'flex', gap: '16px', marginTop: '8px' }}>
+                <label className="form-label" style={{ minHeight: '38px', display: 'flex', alignItems: 'flex-end', marginBottom: '8px' }}>
+                  திருமணம் நிலை (Select Marital Status)
+                </label>
+                <div style={{ display: 'flex', gap: '16px', alignItems: 'center', height: '46px' }}>
                   <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', cursor: 'pointer' }}>
                     <input
                       type="radio"
@@ -1412,10 +1624,13 @@ const Kovil = () => {
                     onChange={handleChange}
                     icon={User}
                     placeholder="மனைவி பெயரை உள்ளிடவும்"
+                    labelStyle={{ minHeight: '38px', display: 'flex', alignItems: 'flex-end', marginBottom: '8px' }}
                   />
 
                   <div className="form-group">
-                    <label className="form-label">மனைவியின் குலதெய்வம் (Wife's Kula Deivam)</label>
+                    <label className="form-label" style={{ minHeight: '38px', display: 'flex', alignItems: 'flex-end', marginBottom: '8px' }}>
+                      மனைவியின் குலதெய்வம் (Wife's Kula Deivam)
+                    </label>
                     <div className="input-wrapper">
                       <Sparkles className="input-icon" size={18} />
                       <input
@@ -1427,7 +1642,6 @@ const Kovil = () => {
                           const textVal = e.target.value;
                           setWifeKulaDeivam(textVal);
 
-                          // Try to find matching deity and update spouse_kula_deivam_id
                           const cleanWifeDeity = textVal.trim().toLowerCase();
                           const foundDeity = kulaDeivams.find(kd =>
                             cleanWifeDeity.includes(kd.name_ta.toLowerCase()) ||
@@ -1439,7 +1653,7 @@ const Kovil = () => {
                           }));
                         }}
                         list="kulaDeivamsList"
-                        style={{ paddingLeft: '42px' }}
+                        style={{ paddingLeft: '42px', background: '#fff' }}
                       />
                       <datalist id="kulaDeivamsList">
                         {kulaDeivams.map(kd => (
@@ -1478,7 +1692,7 @@ const Kovil = () => {
               </button>
             )}
 
-            {activeStep < 4 ? (
+            {activeStep < 5 ? (
               <button
                 type="button"
                 className="btn btn-primary"

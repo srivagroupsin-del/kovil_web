@@ -43,6 +43,7 @@ import PikaraTeyvankal from './pages/PikaraTeyvankal';
 import BaliTeyvankal from './pages/BaliTeyvankal';
 import KavalTeyvankal from './pages/KavalTeyvankal';
 import { ParivaraDeities, PigaraDeities, UpaDeities } from './pages/UpaTeyvankal';
+import Ancestors from './pages/Ancestors';
 
 
 
@@ -119,6 +120,7 @@ function App() {
           <Route path="takaval" element={<Takaval />} />
           <Route path="kattali" element={<Kattali />} />
           <Route path="kullam_people" element={<KullamPeople />} />
+          <Route path="ancestors" element={<Ancestors />} />
           
           {/* Catch all */}
           <Route path="*" element={<Navigate to="/" replace />} />

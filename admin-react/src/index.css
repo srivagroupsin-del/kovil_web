@@ -725,7 +725,7 @@ ul {
 
 .form-control {
   width: 100%;
-  padding: 5px 16px;
+  padding: 11px 16px;
   padding-left: 42px; /* Space for icon */
   border: 1px solid #e2e8f0;
   border-radius: 10px;
@@ -1418,3 +1418,92 @@ ul {
   box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
 }
 
+/* Responsive Form Grid across all pages */
+@media (max-width: 768px) {
+  .form-grid {
+    grid-template-columns: 1fr !important;
+    gap: 16px !important;
+  }
+}
+
+/* Header Responsiveness for Mobile Devices */
+@media (max-width: 768px) {
+  .header-search {
+    width: 100% !important;
+  }
+  
+  .pagination-wrapper {
+    flex-direction: column;
+    gap: 16px;
+    align-items: center;
+  }
+  
+  .pagination-info {
+    text-align: center;
+  }
+  
+  .pagination-btns {
+    width: 100%;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  
+  .form-actions {
+    flex-direction: column-reverse;
+    width: 100%;
+  }
+
+  .form-actions .btn {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .form-card {
+    padding: 0 10px;
+  }
+}
+
+@media (max-width: 640px) {
+  .header-actions .icon-action[title="Messages"],
+  .header-actions .icon-action[title="Theme"],
+  .header-actions .icon-action[title="Fullscreen"],
+  .header-divider {
+    display: none !important;
+  }
+  
+  .user-info {
+    display: none !important;
+  }
+  
+  .header-left {
+    gap: 12px;
+  }
+  
+  /* Make modals fullscreen on small mobile devices */
+  .modal-content {
+    max-width: 100% !important;
+    width: 100%;
+    height: 100%;
+    max-height: 100vh;
+    border-radius: 0;
+    margin: 0;
+  }
+
+  .modal-overlay {
+    padding: 0;
+  }
+
+  .modal-footer {
+    flex-direction: column-reverse;
+  }
+
+  .modal-footer .btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* Ensure smooth scrolling for tables on touch devices */
+.table-container {
+  -webkit-overflow-scrolling: touch;
+}

@@ -81,6 +81,7 @@ const kulasRouter = require("./routes/kulas");
 const kulaDeivamsRouter = require("./routes/kula_deivams");
 const vagaiyarasRouter = require("./routes/vagaiyaras");
 const communitySelectionsRouter = require("./routes/community_selections");
+const templeAncestorsRouter = require("./routes/temple_ancestors");
 
 const app = express();
 
@@ -181,6 +182,7 @@ registerRouter(kulasRouter);
 registerRouter(kulaDeivamsRouter);
 registerRouter(vagaiyarasRouter);
 registerRouter(communitySelectionsRouter);
+registerRouter(templeAncestorsRouter);
 
 app.use("/api/parivara_deivangal", parivaraDeivangalRouter);
 app.use("/parivara_deivangal", parivaraDeivangalRouter);
